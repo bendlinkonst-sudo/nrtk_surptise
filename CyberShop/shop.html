@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>НРТК СЮРПРИЗ | Главная</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;    
+            --neon-pink: #ff00ff;    
+            --status-green: #39ff14; 
+            --bg-overlay: rgba(0, 0, 0, 0.75); 
+        }
+
+        body {
+            background: url('background.jpg') no-repeat center center fixed; 
+            background-size: cover;
+            background-color: #0a0a0a;
+            margin: 0;
+            padding: 0;
+            font-family: 'Verdana', Geneva, sans-serif;
+            color: var(--neon-blue);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-overlay);
+            backdrop-filter: blur(10px);
+            z-index: -1;
+        }
+
+        .cyber-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0, 242, 255, 0.03);
+            border-bottom: 2px solid var(--neon-blue);
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .cyber-header::after {
+            content: "";
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .logo-area { display: flex; align-items: center; text-decoration: none; color: inherit; }
+
+        .logo-icon {
+            font-size: 30px;
+            margin-right: 20px;
+            filter: drop-shadow(0 0 8px var(--neon-blue));
+            animation: rotate 12s linear infinite;
+        }
+
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .tech-font {
+            font-weight: 900;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+        }
+
+        .logo-text h1 { margin: 0; font-size: 24px; }
+
+        .status-online {
+            font-size: 10px;
+            color: var(--status-green);
+            letter-spacing: 2px;
+            animation: blink 1.5s step-end infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .header-nav { display: flex; align-items: center; }
+
+        .nav-link {
+            color: var(--neon-blue);
+            text-decoration: none;
+            margin: 0 20px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--neon-pink);
+            text-shadow: 0 0 15px var(--neon-pink);
+        }
+
+        .cart-btn {
+            font-size: 24px;
+            color: var(--neon-blue);
+            text-decoration: none;
+            margin-left: 10px;
+            margin-right: 25px;
+            transition: 0.3s;
+        }
+
+        .cart-btn:hover {
+            color: var(--neon-pink);
+            filter: drop-shadow(0 0 10px var(--neon-pink));
+        }
+
+        .login-btn {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 10px 24px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.4s;
+            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%);
+            text-decoration: none;
+        }
+
+        .login-btn:hover {
+            background: rgba(0, 242, 255, 0.2);
+            box-shadow: 0 0 20px var(--neon-blue);
+            color: #fff;
+        }
+
+        /* HERO BLOCK */
+        .hero-section {
+            text-align: center;
+            padding: 100px 20px;
+            max-width: 900px;
+        }
+
+        .hero-section h2 {
+            font-size: 48px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .hero-section p {
+            font-size: 18px;
+            color: var(--neon-blue);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="cyber-header">
+        <a href="index.html" class="logo-area">
+            <div class="logo-icon">⚙️</div>
+            <div class="logo-text">
+                <h1 class="tech-font">НРТК СЮРПРИЗ</h1>
+                <span class="status-online">● СИСТЕМА_АКТИВНА</span>
+            </div>
+        </a>
+        
+        <nav class="header-nav">
+            <a href="index.html" class="nav-link tech-font">ГЛАВНАЯ</a>
+            <a href="shop.html" class="nav-link tech-font">МАГАЗИН</a>
+            <a href="account.html" class="nav-link tech-font">МОЙ АККАУНТ</a>
+            <a href="cart.html" class="cart-btn" title="Корзина">🛒</a>
+            <a href="login.html" class="login-btn tech-font">ВХОД</a>
+        </nav>
+    </header>
+
+    <main class="hero-section">
+        <h2 class="tech-font">Магазин</h2>
+        <p>Добро пожаловать в закрытый терминал поставок НРТК СЮРПРИЗ. Мы создаем модули, которые меняют правила игры.</p>
+    </main>
+
+</body>
+</html>

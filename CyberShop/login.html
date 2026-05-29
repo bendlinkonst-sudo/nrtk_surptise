@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>НРТК СЮРПРИЗ | БЕЗОПАСНЫЙ ВХОД</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;    
+            --neon-pink: #ff00ff;    
+            --bg-overlay: radial-gradient(circle, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.95) 100%); 
+        }
+
+        body {
+            background: #0a0a0a url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            font-family: 'Verdana', sans-serif;
+            color: var(--neon-blue);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-overlay);
+            z-index: 1;
+        }
+
+        .login-box {
+            position: relative;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            padding: 30px 40px;
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            /* Тот самый крутой дизайн углов */
+            clip-path: polygon(0 5%, 5% 0, 100% 0, 100% 95%, 95% 100%, 0 100%);
+        }
+
+        .tech-font { font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-size: 11px; }
+        h2 { margin-bottom: 20px; text-shadow: 0 0 10px var(--neon-blue); letter-spacing: 4px; font-size: 1.5rem; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 9px; margin-bottom: 6px; color: var(--neon-blue); opacity: 0.8; }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 242, 255, 0.05);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            color: #fff;
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .input-group input:focus { border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 255, 0.2); }
+
+        /* Капча в стиле хакерского терминала */
+        .captcha-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        #captchaCanvas {
+            background: #111;
+            border: 1px solid var(--neon-blue);
+            cursor: pointer;
+        }
+        #captchaInput { width: 100px; text-align: center; letter-spacing: 2px; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            border: 1px solid var(--neon-pink);
+            color: #fff;
+            cursor: pointer;
+            transition: 0.4s;
+            margin-top: 15px;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.2);
+        }
+
+        .submit-btn:hover { background: var(--neon-pink); color: #000; box-shadow: 0 0 30px var(--neon-pink); }
+        .toggle-link { display: inline-block; margin-top: 20px; color: var(--neon-blue); text-decoration: none; font-size: 9px; opacity: 0.6; transition: 0.3s; }
+        .toggle-link:hover { opacity: 1; color: var(--neon-pink); }
+        .status-msg { font-size: 10px; margin-top: 15px; min-height: 20px; letter-spacing: 1px; line-height: 1.3; }
+
+        .scan-line {
+            width: 100%; height: 1px; background: var(--neon-blue); position: absolute;
+            top: 0; left: 0; opacity: 0.2; animation: scan 6s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <div class="scan-line"></div>
+        <div style="font-size: 30px; margin-bottom: 5px;">🛡️</div>
+        <h2 id="formTitle" class="tech-font">АВТОРИЗАЦИЯ</h2>
+        
+        <form id="accessForm"> 
+            <div class="input-group">
+                <label class="tech-font">ИДЕНТИФИКАТОР (EMAIL)</label>
+                <input type="email" id="userEmail" placeholder="TERMINAL@NRTK.COM" required>
+            </div>
+            
+            <div class="input-group">
+                <label class="tech-font">КЛЮЧ ДОСТУПА</label>
+                <input type="password" id="userPass" placeholder="••••••••" required>
+            </div>
+
+            <div class="input-group" id="confirmPassGroup" style="display: none;">
+                <label class="tech-font">ПОВТОРИТЕ КЛЮЧ</label>
+                <input type="password" id="userPassConfirm" placeholder="••••••••">
+            </div>
+
+            <div class="input-group">
+                <label class="tech-font">ПРОВЕРКА СИСТЕМЫ (CAPTCHA)</label>
+                <div class="captcha-container">
+                    <canvas id="captchaCanvas" width="120" height="40"></canvas>
+                    <input type="text" id="captchaInput" placeholder="КОД" required>
+                </div>
+                <span style="font-size: 8px; opacity: 0.5;">КЛИКНИТЕ НА КОД ДЛЯ ОБНОВЛЕНИЯ</span>
+            </div>
+            
+            <button type="submit" class="submit-btn tech-font" id="mainBtn">УСТАНОВИТЬ СОЕДИНЕНИЕ</button>
+            <div id="status" class="status-msg tech-font"></div>
+        </form>
+        
+        <a href="#" id="toggleMode" class="toggle-link tech-font">НОВЫЙ СОТРУДНИК? РЕГИСТРАЦИЯ</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            sendEmailVerification,
+            setPersistence,
+            browserLocalPersistence 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQmxnnMwKmgx3X7PFNhPbGTwT3dp1meFM",
+            authDomain: "surprise-be5e6.firebaseapp.com",
+            projectId: "surprise-be5e6",
+            storageBucket: "surprise-be5e6.firebasestorage.app",
+            messagingSenderId: "853731288847",
+            appId: "1:853731288847:web:e146e04e0a8ca3f776c07a",
+            measurementId: "G-89K28XM7J7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+
+        // Улучшаем работу в Comet: сохраняем сессию даже при жестких настройках
+        setPersistence(auth, browserLocalPersistence);
+
+        let isLoginMode = true;
+        let currentCaptcha = "";
+
+        const form = document.getElementById('accessForm');
+        const status = document.getElementById('status');
+        const btn = document.getElementById('mainBtn');
+        const toggleBtn = document.getElementById('toggleMode');
+        const title = document.getElementById('formTitle');
+        const confirmGroup = document.getElementById('confirmPassGroup');
+        const canvas = document.getElementById('captchaCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ГЕНЕРАЦИЯ КАПЧИ
+        function generateCaptcha() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            currentCaptcha = "";
+            for (let i = 0; i < 5; i++) currentCaptcha += chars.charAt(Math.floor(Math.random() * chars.length));
+            drawCaptcha();
+        }
+
+        function drawCaptcha() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.font = "bold 20px 'Courier New'";
+            ctx.fillStyle = "#00f2ff";
+            ctx.textBaseline = "middle";
+            // Шум для защиты от ботов
+            for(let i=0; i<20; i++) {
+                ctx.strokeStyle = Math.random() > 0.5 ? "#ff00ff" : "#00f2ff";
+                ctx.beginPath();
+                ctx.moveTo(Math.random()*canvas.width, Math.random()*canvas.height);
+                ctx.lineTo(Math.random()*canvas.width, Math.random()*canvas.height);
+                ctx.stroke();
+            }
+            for(let i=0; i<currentCaptcha.length; i++) {
+                ctx.save();
+                ctx.translate(20 + i*20, 20);
+                ctx.rotate((Math.random()-0.5) * 0.4);
+                ctx.fillText(currentCaptcha[i], 0, 0);
+                ctx.restore();
+            }
+        }
+
+        canvas.addEventListener('click', generateCaptcha);
+        generateCaptcha();
+
+        // ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            status.innerText = "";
+            generateCaptcha();
+            title.innerText = isLoginMode ? "АВТОРИЗАЦИЯ" : "РЕГИСТРАЦИЯ";
+            btn.innerText = isLoginMode ? "УСТАНОВИТЬ СОЕДИНЕНИЕ" : "СОЗДАТЬ И ПОДТВЕРДИТЬ";
+            toggleBtn.innerText = isLoginMode ? "НОВЫЙ СОТРУДНИК? РЕГИСТРАЦИЯ" : "УЖЕ ЕСТЬ ДОСТУП? ВОЙТИ";
+            confirmGroup.style.display = isLoginMode ? "none" : "block";
+        });
+
+        // ОБРАБОТКА ФОРМЫ
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('userEmail').value;
+            const pass = document.getElementById('userPass').value;
+            const passConfirm = document.getElementById('userPassConfirm').value;
+            const captchaVal = document.getElementById('captchaInput').value.toUpperCase();
+
+            status.style.color = "var(--neon-blue)";
+
+            if (captchaVal !== currentCaptcha) {
+                status.innerText = "ОШИБКА: НЕВЕРНЫЙ КОД КАПЧИ";
+                status.style.color = "var(--neon-pink)";
+                generateCaptcha();
+                return;
+            }
+
+            if (!isLoginMode && pass !== passConfirm) {
+                status.innerText = "ОШИБКА: ПАРОЛИ НЕ СОВПАДАЮТ";
+                status.style.color = "var(--neon-pink)";
+                return;
+            }
+
+            status.innerText = "СИНХРОНИЗАЦИЯ С ЯДРОМ...";
+
+            try {
+                if (isLoginMode) {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                    if (userCredential.user.emailVerified) {
+                        handleSuccess("ДОСТУП РАЗРЕШЕН");
+                    } else {
+                        status.innerText = "ОШИБКА: ПОДТВЕРДИТЕ ПОЧТУ!";
+                        status.style.color = "var(--neon-pink)";
+                    }
+                } else {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    await sendEmailVerification(userCredential.user);
+                    status.innerText = "УСПЕХ! ПИСЬМО ОТПРАВЛЕНО. ПОДТВЕРДИТЕ И ВОЙДИТЕ.";
+                    status.style.color = "#39ff14";
+                    form.reset();
+                    generateCaptcha();
+                }
+            } catch (error) {
+                status.style.color = "var(--neon-pink)";
+                if (error.code === 'auth/network-request-failed') status.innerText = "СЕТЕВАЯ ОШИБКА: ПРОВЕРЬТЕ СВЯЗЬ";
+                else if (error.code === 'auth/invalid-credential') status.innerText = "ОШИБКА: НЕВЕРНЫЕ ДАННЫЕ";
+                else status.innerText = "СБОЙ: " + error.code;
+            }
+        });
+
+        function handleSuccess(msg) {
+            localStorage.setItem('isLoggedIn', 'true');
+            status.innerText = msg + ". ВХОД...";
+            status.style.color = "#39ff14";
+            btn.style.display = "none";
+            setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+        }
+    </script>
+</body>
+</html>
