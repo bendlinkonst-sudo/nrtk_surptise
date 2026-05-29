@@ -2,12 +2,11 @@
 <html lang="ru">
 <head>
     <script>
-    // Проверка авторизации: если в памяти браузера нет отметки 'isLoggedIn', 
-    // система выбрасывает пользователя на страницу входа.
-    if (localStorage.getItem('isLoggedIn') !== 'true') {
-        window.location.href = 'login.html';
-    }
-</script>
+        // Проверка авторизации
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>НРТК СЮРПРИЗ | Главная</title>
@@ -37,7 +36,6 @@
             overflow-x: hidden;
         }
 
-        /* УЛУЧШЕННЫЙ ФОНОВЫЙ СЛОЙ */
         body::before {
             content: "";
             position: fixed;
@@ -46,51 +44,59 @@
             z-index: -1;
         }
 
-        /* --- ЭТАЛОННАЯ ШАПКА --- */
+        /* --- ОБНОВЛЕННАЯ ШАПКА --- */
         .cyber-header {
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 50px;
-            /* Эффект матового стекла */
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
+            padding: 10px 50px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
             border-bottom: 1px solid rgba(0, 242, 255, 0.3);
             box-sizing: border-box;
             position: sticky;
             top: 0;
             z-index: 1000;
-            overflow: hidden;
         }
 
-        /* УСИЛЕННАЯ НЕОНОВАЯ ПОЛОСКА */
+        /* Сканирующая полоса */
         .cyber-header::after {
             content: "";
             position: absolute;
             top: 0; left: -100%;
             width: 100%; height: 2px;
             background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-pink), transparent);
-            animation: scan 3s linear infinite; /* Чуть ускорил для динамики */
-            filter: blur(1px);
+            animation: scan 4s linear infinite;
         }
 
-        @keyframes scan {
-            0% { left: -100%; }
-            100% { left: 100%; }
+        @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
+
+        /* СТИЛИЗАЦИЯ ЛОГОТИПА */
+        .logo-area { 
+            display: flex; 
+            align-items: center; 
+            text-decoration: none; 
+            color: inherit; 
         }
 
-        .logo-area { display: flex; align-items: center; text-decoration: none; color: inherit; }
-        .logo-icon { 
-            font-size: 32px; 
-            margin-right: 15px; 
-            filter: drop-shadow(0 0 10px var(--neon-blue)); 
+        .logo-img {
+            height: 50px; /* Оптимальный размер для шапки */
+            width: auto;
+            margin-right: 15px;
+            filter: drop-shadow(0 0 8px var(--neon-blue));
+            transition: 0.3s;
+        }
+
+        .logo-area:hover .logo-img {
+            filter: drop-shadow(0 0 15px var(--neon-pink));
+            transform: rotate(-3deg) scale(1.05);
         }
 
         .tech-font {
             font-weight: 900;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             text-shadow: 0 0 8px rgba(0, 242, 255, 0.6);
         }
@@ -110,9 +116,9 @@
         .nav-link {
             color: var(--neon-blue);
             text-decoration: none;
-            margin: 0 18px;
-            font-size: 12px;
-            transition: all 0.3s ease;
+            margin: 0 15px;
+            font-size: 11px;
+            transition: 0.3s;
             opacity: 0.8;
         }
 
@@ -120,37 +126,32 @@
             color: var(--neon-pink);
             text-shadow: 0 0 15px var(--neon-pink);
             opacity: 1;
-            transform: translateY(-1px);
         }
 
         .cart-btn {
-            font-size: 22px;
+            font-size: 20px;
             text-decoration: none;
-            margin-right: 25px;
+            margin: 0 20px;
             transition: 0.3s;
-            filter: drop-shadow(0 0 5px var(--neon-blue));
         }
 
-        .cart-btn:hover { 
-            transform: scale(1.2) rotate(-10deg); 
-            filter: drop-shadow(0 0 12px var(--neon-pink)); 
-        }
+        .cart-btn:hover { transform: scale(1.2); }
 
-        .login-btn {
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 10px 25px;
+        .logout-btn {
+            border: 1px solid var(--neon-pink);
+            color: #fff;
+            padding: 8px 20px;
             text-decoration: none;
-            transition: all 0.4s ease;
-            clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%);
-            background: rgba(0, 242, 255, 0.05);
+            font-size: 11px;
+            background: rgba(255, 0, 255, 0.1);
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            transition: 0.3s;
         }
 
-        .login-btn:hover {
-            background: var(--neon-blue);
-            box-shadow: 0 0 25px var(--neon-blue);
+        .logout-btn:hover {
+            background: var(--neon-pink);
             color: #000;
-            font-weight: bold;
+            box-shadow: 0 0 20px var(--neon-pink);
         }
 
         /* --- ГЛАВНЫЙ КОНТЕНТ --- */
@@ -165,40 +166,37 @@
         }
 
         .hero-title {
-            font-size: clamp(32px, 8vw, 56px); /* Адаптивный размер шрифта */
+            font-size: clamp(28px, 6vw, 50px);
             color: #ffffff;
-            margin: 0 0 25px 0;
-            text-shadow: 0 0 30px rgba(0, 242, 255, 0.8);
+            margin-bottom: 20px;
+            text-shadow: 0 0 25px var(--neon-blue);
         }
 
         .hero-text {
-            font-size: 19px;
-            max-width: 750px;
-            line-height: 1.8;
-            margin-bottom: 50px;
-            color: rgba(0, 242, 255, 0.9);
-            font-weight: 300;
+            font-size: 18px;
+            max-width: 700px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            color: rgba(0, 242, 255, 0.8);
         }
 
         .hero-btn {
             display: inline-block;
-            padding: 20px 60px;
+            padding: 18px 50px;
             color: #fff;
             text-decoration: none;
             border: 2px solid var(--neon-pink);
-            background: rgba(255, 0, 255, 0.05);
-            font-size: 18px;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+            font-size: 16px;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            transition: 0.4s;
         }
 
         .hero-btn:hover {
             background: var(--neon-pink);
             color: #000;
-            box-shadow: 0 0 50px var(--neon-pink);
-            transform: scale(1.1);
-            letter-spacing: 2px;
+            box-shadow: 0 0 40px var(--neon-pink);
+            transform: scale(1.05);
         }
     </style>
 </head>
@@ -206,9 +204,9 @@
 
     <header class="cyber-header">
         <a href="index.html" class="logo-area">
-            <div class="logo-icon">⚙️</div>
+            <img src="76767645.jpg" alt="Лого НРТК" class="logo-img">
             <div class="logo-text">
-                <span class="tech-font" style="font-size: 24px;">НРТК СЮРПРИЗ</span>
+                <span class="tech-font" style="font-size: 20px;">НРТК СЮРПРИЗ</span>
                 <span class="status-online">● СИСТЕМА_АКТИВНА</span>
             </div>
         </a>
@@ -216,9 +214,9 @@
         <nav class="header-nav">
             <a href="index.html" class="nav-link tech-font">ГЛАВНАЯ</a>
             <a href="shop.html" class="nav-link tech-font">МАГАЗИН</a>
-            <a href="account.html" class="nav-link tech-font">МОЙ АККАУНТ</a>
+            <a href="account.html" class="nav-link tech-font">АККАУНТ</a>
             <a href="cart.html" class="cart-btn">🛒</a>
-            <a href="login.html" class="login-btn tech-font">ВЫХОД</a>
+            <a href="#" onclick="logout()" class="logout-btn tech-font">ВЫХОД</a>
         </nav>
     </header>
 
@@ -230,6 +228,13 @@
         </p>
         <a href="shop.html" class="hero-btn tech-font">ПЕРЕЙТИ В КАТАЛОГ</a>
     </main>
+
+    <script>
+        function logout() {
+            localStorage.clear(); // Удаляем данные об авторизации
+            window.location.href = 'login.html'; // Выбрасываем на вход
+        }
+    </script>
 
 </body>
 </html>
