@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>НРТК СЮРПРИЗ | Главная</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Stalinist+One&display=swap" rel="stylesheet">
+    
     <script>
         // Проверка авторизации
         if (localStorage.getItem('isLoggedIn') !== 'true') {
             window.location.href = 'login.html';
         }
     </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>НРТК СЮРПРИЗ | Главная</title>
+
     <style>
         :root {
             --neon-blue: #00f2ff;    
@@ -44,108 +48,110 @@
             z-index: -1;
         }
 
-        /* --- ОБНОВЛЕННАЯ ШАПКА --- */
+        /* --- ШАПКА В СТИЛЕ ЛАБОРАТОРИИ --- */
         .cyber-header {
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 50px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(0, 242, 255, 0.3);
+            padding: 10px 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 2px solid rgba(0, 242, 255, 0.2);
             box-sizing: border-box;
             position: sticky;
             top: 0;
             z-index: 1000;
         }
 
-        /* Сканирующая полоса */
         .cyber-header::after {
             content: "";
             position: absolute;
             top: 0; left: -100%;
             width: 100%; height: 2px;
             background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-pink), transparent);
-            animation: scan 4s linear infinite;
+            animation: scan 5s linear infinite;
         }
 
         @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
 
-        /* СТИЛИЗАЦИЯ ЛОГОТИПА */
+        /* --- БЛОК ЛОГОТИПА --- */
         .logo-area { 
             display: flex; 
             align-items: center; 
             text-decoration: none; 
-            color: inherit; 
+            color: #fff;
+            gap: 15px;
         }
 
         .logo-img {
-            height: 50px; /* Оптимальный размер для шапки */
+            height: 65px; /* Крупный логотип */
             width: auto;
-            margin-right: 15px;
-            filter: drop-shadow(0 0 8px var(--neon-blue));
-            transition: 0.3s;
+            filter: drop-shadow(0 0 10px var(--neon-blue));
+            transition: 0.4s;
         }
 
-        .logo-area:hover .logo-img {
-            filter: drop-shadow(0 0 15px var(--neon-pink));
-            transform: rotate(-3deg) scale(1.05);
+        .logo-text-block {
+            display: flex;
+            flex-direction: column;
         }
 
-        .tech-font {
-            font-weight: 900;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            text-shadow: 0 0 8px rgba(0, 242, 255, 0.6);
-        }
-
-        .status-online {
-            display: block;
+        .nrtk-sub {
             font-size: 9px;
-            color: var(--status-green);
-            text-shadow: 0 0 10px var(--status-green);
+            letter-spacing: 4px;
+            color: var(--neon-blue);
+            font-weight: bold;
+            margin-bottom: -4px;
+            text-transform: uppercase;
+        }
+
+        .brand-name {
+            font-family: 'Stalinist One', cursive; /* Тот самый шрифт */
+            font-size: 32px;
             letter-spacing: 1px;
+            text-shadow: 3px 3px 0px var(--neon-pink);
+            margin: 0;
+        }
+
+        .status-tag {
+            font-size: 8px;
+            color: var(--status-green);
+            text-shadow: 0 0 5px var(--status-green);
             margin-top: 2px;
         }
 
         /* --- НАВИГАЦИЯ --- */
-        .header-nav { display: flex; align-items: center; }
+        .header-nav { display: flex; align-items: center; gap: 20px; }
 
         .nav-link {
-            color: var(--neon-blue);
+            color: #fff;
             text-decoration: none;
-            margin: 0 15px;
             font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 2px;
             transition: 0.3s;
-            opacity: 0.8;
+            opacity: 0.7;
+            text-transform: uppercase;
         }
 
         .nav-link:hover {
-            color: var(--neon-pink);
-            text-shadow: 0 0 15px var(--neon-pink);
             opacity: 1;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
         }
-
-        .cart-btn {
-            font-size: 20px;
-            text-decoration: none;
-            margin: 0 20px;
-            transition: 0.3s;
-        }
-
-        .cart-btn:hover { transform: scale(1.2); }
 
         .logout-btn {
             border: 1px solid var(--neon-pink);
             color: #fff;
-            padding: 8px 20px;
+            padding: 10px 20px;
             text-decoration: none;
-            font-size: 11px;
+            font-size: 10px;
+            font-weight: bold;
             background: rgba(255, 0, 255, 0.1);
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
             transition: 0.3s;
+            cursor: pointer;
         }
 
         .logout-btn:hover {
@@ -154,7 +160,7 @@
             box-shadow: 0 0 20px var(--neon-pink);
         }
 
-        /* --- ГЛАВНЫЙ КОНТЕНТ --- */
+        /* --- ГЛАВНЫЙ ЭКРАН --- */
         .hero-section {
             flex-grow: 1;
             display: flex;
@@ -166,15 +172,16 @@
         }
 
         .hero-title {
-            font-size: clamp(28px, 6vw, 50px);
+            font-family: 'Stalinist One', cursive;
+            font-size: clamp(24px, 5vw, 48px);
             color: #ffffff;
             margin-bottom: 20px;
-            text-shadow: 0 0 25px var(--neon-blue);
+            text-shadow: 0 0 20px var(--neon-blue);
         }
 
         .hero-text {
             font-size: 18px;
-            max-width: 700px;
+            max-width: 800px;
             line-height: 1.6;
             margin-bottom: 40px;
             color: rgba(0, 242, 255, 0.8);
@@ -182,10 +189,11 @@
 
         .hero-btn {
             display: inline-block;
-            padding: 18px 50px;
+            padding: 20px 60px;
             color: #fff;
             text-decoration: none;
             border: 2px solid var(--neon-pink);
+            font-family: 'Stalinist One', cursive;
             font-size: 16px;
             box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
@@ -204,35 +212,35 @@
 
     <header class="cyber-header">
         <a href="index.html" class="logo-area">
-            <img src="76767645.jpg" alt="Лого НРТК" class="logo-img">
-            <div class="logo-text">
-                <span class="tech-font" style="font-size: 20px;">НРТК СЮРПРИЗ</span>
-                <span class="status-online">● СИСТЕМА_АКТИВНА</span>
+            <img src="logo-clean.png" alt="НРТК" class="logo-img">
+            <div class="logo-text-block">
+                <span class="nrtk-sub">Научно-Робототехнический Комплекс</span>
+                <h1 class="brand-name">СЮРПРИЗ</h1>
+                <span class="status-tag">STATUS: SYSTEM_ONLINE // SECURED_CONNECTION</span>
             </div>
         </a>
         
         <nav class="header-nav">
-            <a href="index.html" class="nav-link tech-font">ГЛАВНАЯ</a>
-            <a href="shop.html" class="nav-link tech-font">МАГАЗИН</a>
-            <a href="account.html" class="nav-link tech-font">АККАУНТ</a>
-            <a href="cart.html" class="cart-btn">🛒</a>
-            <a href="#" onclick="logout()" class="logout-btn tech-font">ВЫХОД</a>
+            <a href="index.html" class="nav-link">ГЛАВНАЯ</a>
+            <a href="shop.html" class="nav-link">КАТАЛОГ</a>
+            <a href="account.html" class="nav-link">ДОСТУП</a>
+            <a href="#" onclick="logout()" class="logout-btn">ВЫХОД [ESC]</a>
         </nav>
     </header>
 
     <main class="hero-section">
-        <h1 class="hero-title tech-font">БУДУЩЕЕ РОБОТОТЕХНИКИ ЗДЕСЬ</h1>
+        <h2 class="hero-title">ЭРА РОБОТОТЕХНИКИ</h2>
         <p class="hero-text">
-            Добро пожаловать в мир, где Вы познакомитесь с НРТК "СЮРПРИЗ".<br>
-            Мы создаем модули, которые меняют правила игры.
+            Добро пожаловать в закрытый узел НРТК "СЮРПРИЗ". <br>
+            Здесь куются технологии, которые завтра станут стандартом.
         </p>
-        <a href="shop.html" class="hero-btn tech-font">ПЕРЕЙТИ В КАТАЛОГ</a>
+        <a href="shop.html" class="hero-btn">В КАТАЛОГ</a>
     </main>
 
     <script>
         function logout() {
-            localStorage.clear(); // Удаляем данные об авторизации
-            window.location.href = 'login.html'; // Выбрасываем на вход
+            localStorage.clear();
+            window.location.href = 'login.html';
         }
     </script>
 
