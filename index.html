@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>НРТК СЮРПРИЗ | Интерактив</title>
+    <title>НРТК СЮРПРИЗ | Взрыв-схема</title>
     
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') {
@@ -87,6 +87,8 @@
             font-size: 12px;
             pointer-events: none;
             animation: pulse 2s infinite;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         @keyframes pulse {
@@ -100,6 +102,7 @@
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             font-family: monospace;
+            text-shadow: 0 0 10px var(--neon-blue);
         }
     </style>
 </head>
@@ -120,8 +123,8 @@
     </header>
 
     <div id="canvas-container">
-        <div id="loader-status">ИНИЦИАЛИЗАЦИЯ...</div>
-        <div id="hint">КЛИКНИ НА РОБОТА, ЧТОБЫ РАЗОБРАТЬ</div>
+        <div id="loader-status">СКАНИРОВАНИЕ СИСТЕМ...</div>
+        <div id="hint">КЛИКНИТЕ ДЛЯ ДЕТАЛИЗАЦИИ</div>
     </div>
 
     <script type="importmap">
@@ -140,6 +143,7 @@
 
         const container = document.getElementById('canvas-container');
         const loaderStatus = document.getElementById('loader-status');
+        const hint = document.getElementById('hint');
         
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -148,6 +152,7 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 1.2));
@@ -159,50 +164,44 @@
         controls.enableDamping = true;
 
         let isExploded = false;
-        const parts = []; // Тут храним данные для анимации
+        const parts = []; 
         const loader = new GLTFLoader();
 
         loader.load('./tank_nrtk.glb', (gltf) => {
             const model = gltf.scene;
             
-            // Центрируем
             const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
             model.position.sub(center);
             scene.add(model);
 
-            // Перебираем все меши модели
             model.traverse((child) => {
                 if (child.isMesh) {
-                    // Сохраняем начальную позицию каждой детали
                     parts.push({
                         mesh: child,
                         originalPos: child.position.clone(),
-                        // Генерируем направление взрыва (от центра)
-                        explodeVec: child.position.clone().normalize().multiplyScalar(3) 
+                        // Дистанция уменьшена в 3 раза (было 3, стало 1)
+                        explodeVec: child.position.clone().normalize().multiplyScalar(1) 
                     });
                 }
             });
 
             loaderStatus.style.display = 'none';
 
-            // Функция клика
             container.addEventListener('click', () => {
                 isExploded = !isExploded;
-                document.getElementById('hint').innerText = isExploded ? "КЛИКНИ, ЧТОБЫ СОБРАТЬ" : "КЛИКНИ, ЧТОБЫ РАЗОБРАТЬ";
+                hint.innerText = isExploded ? "СБОРКА МОДУЛЕЙ" : "ДЕТАЛИЗАЦИЯ ПРОТОТИПА";
             });
 
             function animate() {
                 requestAnimationFrame(animate);
                 
-                // Анимация разлета
                 parts.forEach(part => {
                     const target = isExploded 
                         ? part.originalPos.clone().add(part.explodeVec) 
                         : part.originalPos;
                     
-                    // Плавное движение (Lerp)
-                    part.mesh.position.learn = part.mesh.position.lerp(target, 0.1);
+                    part.mesh.position.lerp(target, 0.1);
                 });
 
                 if (!isExploded) model.rotation.y += 0.002;
@@ -214,7 +213,7 @@
 
         }, (xhr) => {
             const p = Math.round(xhr.loaded / xhr.total * 100);
-            loaderStatus.innerText = `ЗАГРУЗКА: ${p}%`;
+            loaderStatus.innerText = `ЗАГРУЗКА ДАННЫХ: ${p}%`;
         });
 
         window.addEventListener('resize', () => {
@@ -222,6 +221,13 @@
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
         });
+    </script>
+
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 </html>
