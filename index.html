@@ -3,65 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>НТРК "СЮРПРИЗ"</title>
+    <title>НРТК СЮРПРИЗ | Главная</title>
+    
+    <script>
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <style>
+        :root {
+            --neon-blue: #00f2ff;    
+            --dark-blue: #0077ff;    
+            --bg-overlay: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%); 
+        }
+
         body {
+            background-color: #0a0a0a;
+            background-image: url('background.jpg'); 
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed;
+            background-size: cover;
             margin: 0;
             padding: 0;
-            background-color: #000;
-            color: #fff;
-            font-family: Arial, sans-serif;
+            font-family: 'Verdana', sans-serif;
+            color: var(--neon-blue);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-overlay);
+            z-index: -1;
+        }
+
+        /* --- ШАПКА (ТВОЯ, БЕЗ ИЗМЕНЕНИЙ) --- */
+        .cyber-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid rgba(0, 242, 255, 0.3);
+            box-sizing: border-box;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-area { 
+            display: flex; 
+            align-items: center; 
+            text-decoration: none; 
+            gap: 20px;
+        }
+
+        .logo-img {
+            height: 70px;
+            width: auto;
+            filter: drop-shadow(0 0 10px var(--neon-blue));
+        }
+
+        .logo-text-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
         }
 
-        /* ТВОЯ РОДНАЯ ШАПКА */
-        header {
-            background-image: url('123123.jpg');
-            background-size: cover;
-            background-position: center;
-            height: 300px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        .nrtk-sub {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--neon-blue);
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
         }
 
-        h1 {
-            font-size: 3em;
+        .brand-name {
+            font-size: 38px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fff;
             margin: 0;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px var(--dark-blue);
+            line-height: 1;
         }
 
-        /* КОНТЕЙНЕР ДЛЯ ТАНКА */
+        .header-nav { 
+            display: flex; 
+            align-items: center; 
+            gap: 30px;
+        }
+
+        .nav-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            transition: 0.3s;
+            opacity: 0.8;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            opacity: 1;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .logout-btn {
+            border: 1px solid var(--neon-blue);
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            background: rgba(0, 242, 255, 0.1);
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        /* --- 3D КОНТЕЙНЕР --- */
         #canvas-container {
             width: 100%;
-            height: 500px;
-            background-color: #111;
-            position: relative;
+            height: 500px; 
+            margin-top: 20px;
+            cursor: grab;
+            position: relative; /* Чтобы надпись загрузки была внутри */
         }
+        #canvas-container:active { cursor: grabbing; }
 
         /* ИНДИКАТОР ЗАГРУЗКИ */
-        #loader-info {
+        #loader-status {
             position: absolute;
-            top: 10px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            color: #00f2ff;
-            z-index: 10;
+            transform: translate(-50%, -50%);
+            font-family: monospace;
+            color: var(--neon-blue);
+            pointer-events: none;
+        }
+
+        /* --- КОНТЕНТ --- */
+        .hero-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px 40px 60px 40px;
+        }
+
+        .hero-title {
+            font-size: clamp(24px, 5vw, 42px);
+            font-weight: 900;
+            color: #ffffff;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 20px var(--neon-blue);
+            text-transform: uppercase;
+        }
+
+        .hero-text {
+            font-size: 16px;
+            max-width: 700px;
+            line-height: 1.4;
+            margin-bottom: 30px;
+            color: rgba(0, 242, 255, 0.8);
+        }
+
+        .hero-btn {
+            display: inline-block;
+            padding: 15px 50px;
+            color: #fff;
+            text-decoration: none;
+            border: 2px solid var(--neon-blue);
+            font-size: 16px;
             font-weight: bold;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            transition: 0.4s;
+        }
+
+        .hero-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 40px var(--neon-blue);
+            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>НТРК "СЮРПРИЗ"</h1>
-        <p>Добро пожаловать в будущее</p>
+    <header class="cyber-header">
+        <a href="index.html" class="logo-area">
+            <img src="logo-clean.png" alt="НРТК" class="logo-img">
+            <div class="logo-text-block">
+                <span class="nrtk-sub">Научно-Робототехнический Комплекс</span>
+                <h1 class="brand-name">СЮРПРИЗ</h1>
+            </div>
+        </a>
+        
+        <nav class="header-nav">
+            <a href="index.html" class="nav-link">ГЛАВНАЯ</a>
+            <a href="shop.html" class="nav-link">КАТАЛОГ</a>
+            <a href="profile.html" class="nav-link">МОЙ ПРОФИЛЬ</a>
+            <a href="cart.html" class="nav-link">КОРЗИНА 🛒</a>
+            <a href="#" onclick="logout()" class="logout-btn">ВЫХОД</a>
+        </nav>
     </header>
 
     <div id="canvas-container">
-        <div id="loader-info">Подключение к системам...</div>
+        <div id="loader-status">ПОДКЛЮЧЕНИЕ К МОДУЛЮ: 0%</div>
     </div>
+
+    <main class="hero-section">
+        <h2 class="hero-title">ПЕРЕДОВЫЕ ТЕХНОЛОГИИ</h2>
+        <p class="hero-text">
+            Добро пожаловать в закрытый узел НРТК "СЮРПРИЗ".<br>
+            Доступ к прототипам разрешен только авторизованному персоналу.
+        </p>
+        <a href="shop.html" class="hero-btn">ПЕРЕЙТИ В КАТАЛОГ</a>
+    </main>
 
     <script type="importmap">
         {
@@ -78,53 +260,81 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         const container = document.getElementById('canvas-container');
-        const info = document.getElementById('loader-info');
-        
+        const loaderStatus = document.getElementById('loader-status');
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
         
+        // Камера
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 2, 8);
+
+        // Рендерер
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 5, 5);
-        scene.add(light);
+        // Освещение (сделал поярче, чтобы танк было видно хорошо)
+        scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+        const topLight = new THREE.DirectionalLight(0xffffff, 2);
+        topLight.position.set(5, 10, 7);
+        scene.add(topLight);
 
+        // Управление
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Загрузка модели
+        let robotModel;
         const loader = new GLTFLoader();
         
-        // ПУТЬ К МОДЕЛИ
         loader.load('./tank_nrtk.glb', (gltf) => {
-            const model = gltf.scene;
-            scene.add(model);
+            robotModel = gltf.scene;
             
-            const box = new THREE.Box3().setFromObject(model);
+            // Авто-центрирование и масштабирование под экран
+            const box = new THREE.Box3().setFromObject(robotModel);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
-            model.position.sub(center);
+            robotModel.position.sub(center);
             
-            camera.position.z = Math.max(size.x, size.y, size.z) * 1.5;
-            info.style.display = 'none';
-
-            const controls = new OrbitControls(camera, renderer.domElement);
+            scene.add(robotModel);
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            camera.position.z = maxDim * 1.8;
+            
+            loaderStatus.style.display = 'none'; // Скрываем загрузку
             
             function animate() {
                 requestAnimationFrame(animate);
-                model.rotation.y += 0.005;
+                if (robotModel) robotModel.rotation.y += 0.003;
+                controls.update();
                 renderer.render(scene, camera);
             }
             animate();
-        }, 
-        (xhr) => {
-            const p = Math.round(xhr.loaded / xhr.total * 100);
-            info.innerText = `Загрузка танка: ${p}%`;
-        },
-        (err) => {
-            info.innerText = "Ошибка! Проверь имя файла .glb";
-            console.error(err);
+            
+        }, (xhr) => {
+            if (xhr.lengthComputable) {
+                const percent = Math.round(xhr.loaded / xhr.total * 100);
+                loaderStatus.innerText = `ЗАГРУЗКА ПРОТОТИПА: ${percent}%`;
+            }
+        }, (error) => {
+            console.error(error);
+            loaderStatus.innerText = "ОШИБКА ДОСТУПА К ФАЙЛУ";
+            loaderStatus.style.color = "red";
         });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 </html>
