@@ -3,105 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>НआरटीК «ТАНК» — Интерактивная Платформа</title>
+    <title>НРТК СЮРПРИЗ | Инженерный разбор</title>
+    
+    <script>
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --neon-blue: #00f2ff;    
+            --dark-blue: #0077ff;    
+            --bg-overlay: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%); 
         }
 
+        /* --- ФОН ИЗ ТВОЕЙ СТРАНИЦЫ --- */
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #050811 0%, #0b1121 50%, #161f36 100%);
-            color: #ffffff;
+            background-color: #0a0a0a;
+            background-image: url('background.jpg'); 
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            font-family: 'Verdana', sans-serif;
+            color: var(--neon-blue);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
         }
 
-        /* --- ВЕРХНЯЯ ШАПКА САЙТА (КАК БЫЛО) --- */
-        header {
-            background: rgba(10, 15, 30, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
-            padding: 20px 40px;
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-overlay);
+            z-index: -1;
+        }
+
+        /* --- КИБЕР-ШАПКА (КАК БЫЛО) --- */
+        .cyber-header {
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: relative;
-            z-index: 100;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            padding: 15px 40px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid rgba(0, 242, 255, 0.3);
+            box-sizing: border-box;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .logo {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            background: linear-gradient(45deg, #00ffcc, #0099ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
-        }
+        .logo-area { display: flex; align-items: center; text-decoration: none; gap: 20px; }
+        .logo-img { height: 70px; filter: drop-shadow(0 0 10px var(--neon-blue)); }
+        .brand-name { font-size: 38px; font-weight: 900; color: #fff; text-transform: uppercase; text-shadow: 0 0 15px var(--dark-blue); margin: 0; }
 
-        nav a {
-            color: #ffffff;
-            text-decoration: none;
-            margin-left: 30px;
-            font-size: 14px;
-            font-weight: 500;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: color 0.3s ease;
-        }
+        .header-nav { display: flex; align-items: center; gap: 30px; }
+        .nav-link { color: #fff; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
+        .nav-link:hover { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
-        nav a:hover {
-            color: #00ffcc;
-            text-shadow: 0 0 10px rgba(0,255,204,0.5);
-        }
-
-        /* --- КОНТЕЙНЕР ДЛЯ 3D СЦЕНЫ --- */
+        /* --- КОНТЕЙНЕР 3D СЦЕНЫ --- */
         #canvas-container {
-            flex: 1;
             width: 100%;
+            height: 600px; 
+            margin-top: 20px;
             position: relative;
             overflow: hidden;
-            background: transparent; /* Прозрачный холст, чтобы был виден градиент body */
         }
 
-        /* Слой для HTML-табличек поверх 3D холста */
-        .labels-overlay {
+        #loader-status {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: monospace;
+            text-shadow: 0 0 10px var(--neon-blue);
             z-index: 10;
         }
 
-        /* Сама табличка (точка + карточка) */
+        /* --- СЛОЙ ДЛЯ СВЕТЯЩИХСЯ ТОЧЕК И ВЫНОСОК --- */
+        .labels-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; 
+            z-index: 1000;
+        }
+
+        /* Сама интерактивная метка */
         .part-label {
             position: absolute;
             display: flex;
             align-items: center;
-            transform: translate(-15px, -15px);
+            transform: translate(-10px, -10px); /* Центрирование точки */
             transition: opacity 0.2s ease;
-            pointer-events: auto;
+            pointer-events: auto; /* Позволяем наводить мышь на точку и карту */
         }
 
-        /* Светящаяся точка на детали */
+        /* Светящаяся неоновая точка на детали */
         .label-dot {
             width: 16px;
             height: 16px;
-            background-color: #00ffcc;
+            background-color: var(--neon-blue);
             border-radius: 50%;
-            border: 3px solid #ffffff;
-            box-shadow: 0 0 15px #00ffcc;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 15px var(--neon-blue);
             cursor: pointer;
             flex-shrink: 0;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, background-color 0.2s ease;
         }
 
         .part-label:hover .label-dot {
@@ -110,204 +123,276 @@
             box-shadow: 0 0 15px #ff0055;
         }
 
-        /* Всплывающая карточка с текстом */
+        /* Всплывающая технологическая карточка с описанием */
         .label-card {
-            background: rgba(15, 22, 36, 0.95);
-            border: 1px solid rgba(0, 255, 204, 0.3);
+            background: rgba(0, 10, 20, 0.95);
+            border: 1px solid var(--neon-blue);
             padding: 12px 16px;
-            border-radius: 8px;
+            border-radius: 6px;
             margin-left: 15px;
-            width: 240px;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            width: 250px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8), 0 0 15px rgba(0, 242, 255, 0.2);
             opacity: 0;
             transform: translateX(-10px);
             transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
         }
 
         .part-label:hover .label-card {
             opacity: 1;
             transform: translateX(0);
+            pointer-events: auto;
         }
 
         .label-card h3 {
-            font-size: 14px;
-            color: #00ffcc;
-            margin-bottom: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--neon-blue);
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .label-card p {
-            font-size: 12px;
+            font-family: sans-serif;
+            font-size: 11px;
             color: #a0aec0;
             line-height: 1.4;
+            margin: 0;
         }
 
-        /* --- ПОЛЗУНОК УПРАВЛЕНИЯ ВЗРЫВОМ --- */
+        /* --- КИБЕРПАНК ПОЛЗУНОК РАЗБОРКИ --- */
         .controls-panel {
             position: absolute;
-            bottom: 40px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(10, 15, 30, 0.85);
-            border: 1px solid rgba(0, 255, 204, 0.2);
-            padding: 15px 35px;
-            border-radius: 50px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--neon-blue);
+            padding: 12px 30px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             gap: 20px;
             backdrop-filter: blur(10px);
-            z-index: 100;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+            z-index: 2000;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
         }
 
         .controls-panel label {
-            font-size: 13px;
-            font-weight: 700;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: bold;
             letter-spacing: 1.5px;
-            color: #00ffcc;
+            color: #fff;
+            text-shadow: 0 0 5px var(--neon-blue);
         }
 
         .controls-panel input[type="range"] {
-            width: 280px;
-            accent-color: #00ffcc;
+            width: 250px;
+            accent-color: var(--neon-blue);
             cursor: pointer;
         }
     </style>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
-    <header>
-        <div class="logo">НआरटीК Платформа</div>
-        <nav>
-            <a href="#">Главная</a>
-            <a href="#">Спецификации</a>
-            <a href="#">Контакты</a>
+    <header class="cyber-header">
+        <a href="index.html" class="logo-area">
+            <img src="logo-clean.png" alt="НРТК" class="logo-img">
+            <div class="logo-text-block">
+                <h1 class="brand-name">СЮРПРИЗ</h1>
+            </div>
+        </a>
+        <nav class="header-nav">
+            <a href="index.html" class="nav-link">ГЛАВНАЯ</a>
+            <a href="shop.html" class="nav-link">КАТАЛОГ</a>
+            <a href="#" onclick="logout()" class="nav-link" style="color: #ff4444;">ВЫХОД</a>
         </nav>
     </header>
 
     <div id="canvas-container">
-        <div class="labels-overlay" id="labels-container"></div>
+        <div id="loader-status">СКАНИРОВАНИЕ СИСТЕМ...</div>
         
-        <div class="controls-panel">
+        <div id="controls-panel" class="controls-panel" style="display: none;">
             <label for="explodeSlider">КОНФИГУРАЦИЯ СБОРКИ</label>
-            <input type="range" id="explodeSlider" min="0" max="1" step="0.01" value="0">
+            <input type="range" id="explodeSlider" min="0" max="1" step="0.005" value="0">
         </div>
+        
+        <div id="labels-container" class="labels-overlay"></div>
     </div>
 
-    <script>
-        let scene, camera, renderer, controls;
-        let robotModel = null;
-        let activeLabels = []; 
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         const container = document.getElementById('canvas-container');
-        const labelsContainer = document.getElementById('labels-container');
+        const loaderStatus = document.getElementById('loader-status');
+        const controlsPanel = document.getElementById('controls-panel');
         const explodeSlider = document.getElementById('explodeSlider');
+        const labelsContainer = document.getElementById('labels-container');
+        
+        const scene = new THREE.Scene();
+        // alpha: true оставляет сцену прозрачной, чтобы задний фон background.jpg корректно отображался
+        scene.background = null; 
 
-        function init() {
-            scene = new THREE.Scene();
-            // Делаем сцену прозрачной, чтобы просвечивал наш красивый градиентный фон CSS
-            scene.background = null; 
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
 
-            // Камера
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(0, 1.5, 4.5);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.appendChild(renderer.domElement);
 
-            // Рендерер с поддержкой прозрачности (alpha: true)
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
+        // Футуристичное сбалансированное освещение
+        scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+        const sun = new THREE.DirectionalLight(0x00f2ff, 1.5);
+        sun.position.set(5, 12, 8);
+        scene.add(sun);
 
-            // Настройки вращения камеры
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 + 0.1; 
+        const fillLight = new THREE.DirectionalLight(0xff0055, 0.4);
+        fillLight.position.set(-5, 5, -5);
+        scene.add(fillLight);
 
-            // Освещение (неоновые оттенки под стать фону)
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
-            scene.add(ambientLight);
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Не даем камере уходить сильно под пол
 
-            const dirLight1 = new THREE.DirectionalLight(0x00ffcc, 0.9);
-            dirLight1.position.set(5, 10, 7);
-            scene.add(dirLight1);
+        const activeLabels = []; 
+        let robotModel = null;
+        const loader = new GLTFLoader();
 
-            const dirLight2 = new THREE.DirectionalLight(0xff0055, 0.45);
-            dirLight2.position.set(-5, 5, -5);
-            scene.add(dirLight2);
+        // Карта соответствия имен из файла понятным русским названиям
+        const nameMapping = {
+            'Body': 'Основное шасси / Рама',
+            'skelet': 'Активная защита',
+            'Camera': 'Камера оптического обзора',
+            'antenna': 'Модуль связи / Антенна',
+            'Wing_left': 'Левое крыло',
+            'Wing_right': 'Правое крыло',
+            'Bonnet': 'Защитный капот ДВС',
+            'transport_module': 'Грузовой отсек платформы',
+            'roller_wheel': 'Опорный каток ходовой',
+            'Caterpillar_left': 'Гусеничная лента (левая)',
+            'Caterpillar_right': 'Гусеничная лента (правая)',
+            'pendant_right': 'Ходовая часть правая',
+            'pendant_left': 'Ходовая часть левая',
+            'Motor_left': 'Тяговый электродвигатель (левый)',
+            'Motor_right': 'Тяговый электродвигатель (правый)',
+            'Electronics': 'Электронный блок БЦВМ'
+        };
 
-            // Загрузка модели
-            const loader = new THREE.GLTFLoader();
-            loader.load('tank_nrtk.glb', function (gltf) {
-                robotModel = gltf.scene;
-                scene.add(robotModel);
+        loader.load('./tank_nrtk.glb', (gltf) => {
+            robotModel = gltf.scene;
+            scene.add(robotModel);
 
-                // Центрируем робота
-                const box = new THREE.Box3().setFromObject(robotModel);
-                const center = box.getCenter(new THREE.Vector3());
-                robotModel.position.sub(center);
+            // Идеальное автоматическое центрирование робота по центру экрана
+            const box = new THREE.Box3().setFromObject(robotModel);
+            const center = box.getCenter(new THREE.Vector3());
+            robotModel.position.sub(center);
+            
+            robotModel.updateMatrixWorld(true);
 
-                // Настраиваем логику разбора и авто-табличек
-                robotModel.traverse((child) => {
-                    if (child.isMesh) {
-                        child.userData.originalPosition = child.position.clone();
-                        
-                        const worldPosition = new THREE.Vector3();
-                        child.getWorldPosition(worldPosition);
-                        child.userData.explosionDirection = worldPosition.clone().normalize();
+            // Сканируем 3D объекты и создаем для них интерактивные элементы
+            robotModel.traverse((child) => {
+                if (child.isMesh) {
+                    // Запоминаем стартовые позиции для плавного перемещения ползунком
+                    child.userData.originalPosition = child.position.clone();
+                    
+                    const worldPos = new THREE.Vector3();
+                    child.getWorldPosition(worldPos);
+                    
+                    // Рассчитываем индивидуальный вектор разлета во все стороны
+                    let explodeVec = worldPos.clone().normalize();
+                    const combinedName = `${child.name ? child.name.toLowerCase() : ''} ${(child.parent && child.parent.name) ? child.parent.name.toLowerCase() : ''}`;
 
-                        // Логика умного отбора названий
-                        const rawName = child.name || '';
-                        const isTechnical = rawName.toLowerCase().includes('cube') || 
-                                            rawName.toLowerCase().includes('plane') || 
-                                            rawName.toLowerCase().includes('mesh') ||
-                                            rawName.toLowerCase().includes('amateur');
+                    // Тонкая настройка направления разлета для конкретных узлов
+                    if (combinedName.includes('body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis')) {
+                        explodeVec.set(0, 0, 0); // Корпус остается на месте
+                    } else if (combinedName.includes('bonnet')) {
+                        explodeVec.set(0, 0.8, 0.8); // Капот летит вверх и вперед
+                    } else if (combinedName.includes('transport_module')) {
+                        explodeVec.set(0, 0.8, -0.8); // Отсек летит вверх и назад
+                    } else {
+                        if (explodeVec.length() === 0) {
+                            explodeVec.set((Math.random() - 0.5) * 2, 0.2, (Math.random() - 0.5) * 2).normalize();
+                        }
+                        explodeVec.multiplyScalar(0.7);
+                        explodeVec.y += 0.2; // Немного приподнимаем остальные детали в воздух
+                    }
+                    child.userData.explodeVector = explodeVec;
 
-                        if (rawName.length > 2 && !isTechnical) {
-                            let cleanName = rawName.split(/[_\.]/)[0]; 
-                            cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-                            const label = document.createElement('div');
-                            label.className = 'part-label';
-                            label.innerHTML = `
-                                <div class="label-dot"></div>
-                                <div class="label-card">
-                                    <h3>${cleanName}</h3>
-                                    <p>Информационный блок компонента платформы.</p>
-                                </div>
-                            `;
-                            labelsContainer.appendChild(label);
-
-                            activeLabels.push({
-                                mesh: child,
-                                labelDOM: label
-                            });
+                    // Проверяем, нужно ли вешать на деталь светящуюся точку
+                    let customTitle = '';
+                    for (const [key, value] of Object.entries(nameMapping)) {
+                        if (combinedName.includes(key.toLowerCase())) {
+                            customTitle = value;
+                            break;
                         }
                     }
-                });
 
-                animate();
-            }, undefined, function (error) {
-                console.error('Ошибка загрузки модели:', error);
+                    // Если имя совпало, генерируем HTML структуру точки на ходу
+                    if (customTitle) {
+                        const labelEl = document.createElement('div');
+                        labelEl.className = 'part-label';
+                        labelEl.innerHTML = `
+                            <div class="label-dot"></div>
+                            <div class="label-card">
+                                <h3>${customTitle}</h3>
+                                <p>Информационно-технический узел роботизированного комплекса «СЮРПРИЗ».</p>
+                            </div>
+                        `;
+                        labelsContainer.appendChild(labelEl);
+
+                        activeLabels.push({
+                            mesh: child,
+                            labelDOM: labelEl
+                        });
+                    }
+                }
             });
 
-            window.addEventListener('resize', onWindowResize);
-        }
+            loaderStatus.style.display = 'none';
+            controlsPanel.style.display = 'flex';
 
-        // Перевод 3D позиций в экранные пиксели
+            animate();
+
+        }, (xhr) => {
+            const p = Math.round(xhr.loaded / xhr.total * 100);
+            loaderStatus.innerText = `СКАНИРОВАНИЕ СИСТЕМ: ${p}%`;
+        });
+
+        // Функция проекции 3D координат центра деталей на 2D экран поверх холста
         function updateLabelsPositions() {
-            if (!robotModel) return;
-
             const tempV = new THREE.Vector3();
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+            const sliderVal = parseFloat(explodeSlider.value);
 
-            activeLabels.forEach((part) => {
+            activeLabels.forEach(part => {
+                // Отображаем точки, только если пользователь начал двигать ползунок разборки
+                if (sliderVal < 0.15) {
+                    part.labelDOM.style.opacity = '0';
+                    part.labelDOM.style.pointerEvents = 'none';
+                    return;
+                } else {
+                    part.labelDOM.style.opacity = '1';
+                    part.labelDOM.style.pointerEvents = 'auto';
+                }
+
                 part.mesh.getWorldPosition(tempV);
                 tempV.project(camera);
 
@@ -318,44 +403,58 @@
                     part.labelDOM.style.display = 'flex';
                 }
 
-                const x = (tempV.x * .5 + .5) * container.clientWidth;
-                const y = (tempV.y * -.5 + .5) * container.clientHeight;
+                const x = (tempV.x * widthHalf) + widthHalf;
+                const y = -(tempV.y * heightHalf) + heightHalf;
 
                 part.labelDOM.style.left = `${x}px`;
                 part.labelDOM.style.top = `${y}px`;
             });
         }
 
-        // Движение деталей ползунком
-        function updateExplosion() {
-            if (!robotModel) return;
-            
-            const factor = parseFloat(explodeSlider.value) * 1.5; 
-
-            robotModel.traverse((child) => {
-                if (child.isMesh && child.userData.originalPosition && child.userData.explosionDirection) {
-                    const offset = child.userData.explosionDirection.clone().multiplyScalar(factor);
-                    child.position.copy(child.userData.originalPosition).add(offset);
-                }
-            });
-        }
-
-        explodeSlider.addEventListener('input', updateExplosion);
-
+        // Цикл анимации
         function animate() {
             requestAnimationFrame(animate);
+            
+            const sliderValue = parseFloat(explodeSlider.value);
+
+            // Двигаем каждый меш к его целевой точке разлета в зависимости от положения ползунка
+            if (robotModel) {
+                robotModel.traverse((child) => {
+                    if (child.isMesh && child.userData.originalPosition && child.userData.explodeVector) {
+                        const targetPos = child.userData.originalPosition.clone().add(
+                            child.userData.explodeVector.clone().multiplyScalar(sliderValue)
+                        );
+                        // lerp обеспечивает плавную доводку деталей до места
+                        child.position.lerp(targetPos, 0.1);
+                    }
+                });
+
+                // Когда робот собран полностью, он медленно и красиво вращается сам
+                if (sliderValue === 0) {
+                    robotModel.rotation.y += 0.003;
+                }
+            }
+
             controls.update();
-            updateLabelsPositions();
+            
+            // Сначала выполняем рендеринг геометрии
             renderer.render(scene, camera);
+            // И только после этого пересчитываем позиции точек, исключая любые подергивания!
+            updateLabelsPositions();
         }
 
-        function onWindowResize() {
+        window.addEventListener('resize', () => {
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
-        }
+        });
+    </script>
 
-        init();
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
     </script>
 </body>
 </html>
