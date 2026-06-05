@@ -270,8 +270,9 @@
                     let customTitle = '';
 
                     // Проверяем совпадения по словарю
+                    // ИСПРАВЛЕНИЕ: Приводим ключ из словаря (key) к нижнему регистру перед поиском .includes()
                     for (const [key, value] of Object.entries(nameMapping)) {
-                        if (combinedName.includes(key)) {
+                        if (combinedName.includes(key.toLowerCase())) {
                             isMainPart = true;
                             customTitle = value;
                             break;
@@ -279,9 +280,10 @@
                     }
 
                     // Настройка векторов движения деталей
-                    if (combinedName.includes('Body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis') || combinedName.includes('base')) {
+                    // ИСПРАВЛЕНИЕ: Все проверяемые строки переведены в нижний регистр ('body', 'bonnet')
+                    if (combinedName.includes('body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis') || combinedName.includes('base')) {
                         explodeVec.set(0, 0, 0); 
-                    } else if (combinedName.includes('Bonnet')) {
+                    } else if (combinedName.includes('bonnet')) {
                         explodeVec.set(0, 0.7, 0.9); // Чуть выше и вперед
                     } else if (combinedName.includes('transport_module')) {
                         explodeVec.set(0, 0.7, -0.9); // Чуть выше и назад
