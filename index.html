@@ -181,43 +181,37 @@
             robotModel.traverse((child) => {
                 if (child.isMesh) {
                     const nameLower = child.name ? child.name.toLowerCase() : '';
-
-                    // 1. ФИКСИРУЕМ КОРПУС: Если деталь относится к раме/Body, ее вектор разлета равен 0
-                    if (nameLower.includes('body')) {
-                        parts.push({
-                            mesh: child,
-                            originalPos: child.position.clone(),
-                            explodeVec: new THREE.Vector3(0, 0, 0) // Стоит на месте!
-                        });
-                        return; // Выходим из текущей итерации, не применяя случайный разлет
-                    }
-
                     let explodeVec = new THREE.Vector3();
 
-                    // 2. РУЧНОЙ КОНТРОЛЬ ДЛЯ ВАЖНЫХ МОДУЛЕЙ
-                    if (nameLower.includes('bonnet')) {
-                        // Капот аккуратно летит вперед (по оси Z) и немного вверх
-                        explodeVec.set(0, 0.4, 0.8);
+                    // 1. РАСШИРЕННЫЙ ФИЛЬТР ДЛЯ КОРПУСА (РАМЫ)
+                    // Расширяем имена, чтобы точно поймать железную основу танка
+                    if (nameLower.includes('body') || nameLower.includes('skelet') || nameLower.includes('rama') || nameLower.includes('chassis') || nameLower.includes('base')) {
+                        explodeVec.set(0, 0, 0); // Намертво фиксируем в центре
                     } 
+                    // 2. РУЧНОЙ КОНТРОЛЬ КАПОТА (Строго вверх и вперед)
+                    else if (nameLower.includes('bonnet')) {
+                        explodeVec.set(0, 0.6, 0.8); // Увеличил подъем вверх, чтобы гарантированно оторвать от рамы
+                    } 
+                    // 3. РУЧНОЙ КОНТРОЛЬ КОРЫТА (Строго вверх и назад)
                     else if (nameLower.includes('transport_module')) {
-                        // Корыто для груза летит назад (минус по Z) и приподнимается вверх
-                        explodeVec.set(0, 0.5, -0.9);
+                        explodeVec.set(0, 0.6, -0.8); 
                     } 
+                    // 4. ДЛЯ ВСЕХ ОСТАЛЬНЫХ ДЕТАЛЕЙ — СТАНДАРТНЫЙ УМЕНЬШЕННЫЙ РАЗЛЕТ
                     else {
-                        // 3. СЛУЧАЙНЫЙ РАЗЛЕТ ДЛЯ ВСЕХ ОСТАЛЬНЫХ ДЕТАЛЕЙ (уменьшен в 3 раза)
                         const worldPos = new THREE.Vector3();
                         child.getWorldPosition(worldPos);
 
                         explodeVec = worldPos.clone().normalize();
 
-                        // Защита от нулевого центра
+                        // Если деталь застряла в центре, даем легкий импульс вбок
                         if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
-                            explodeVec.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2).normalize();
+                            explodeVec.set((Math.random() - 0.5) * 2, 0.2, (Math.random() - 0.5) * 2).normalize();
                         }
 
-                        // Умножаем на 0.6 (в 3 раза меньше первоначального)
+                        // Умножаем на 0.6 (в 3 раза меньше от первоначального)
                         explodeVec.multiplyScalar(0.6);
-                        // Легкий подъем вверх для объема
+                        
+                        // Небольшой подъем вверх для объема, но только если это не рама
                         explodeVec.y += 0.15;
                     }
 
