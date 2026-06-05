@@ -180,23 +180,46 @@
             // Бежим по всем мешам модели
             robotModel.traverse((child) => {
                 if (child.isMesh) {
-                    // Вычисляем глобальное положение
-                    const worldPos = new THREE.Vector3();
-                    child.getWorldPosition(worldPos);
+                    const nameLower = child.name ? child.name.toLowerCase() : '';
 
-                    // Создаем вектор направления «из центра наружу»
-                    let explodeVec = worldPos.clone().normalize();
-
-                    // Защита от нулевых координат центра
-                    if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
-                        explodeVec.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2).normalize();
+                    // 1. ФИКСИРУЕМ КОРПУС: Если деталь относится к раме/Body, ее вектор разлета равен 0
+                    if (nameLower.includes('body')) {
+                        parts.push({
+                            mesh: child,
+                            originalPos: child.position.clone(),
+                            explodeVec: new THREE.Vector3(0, 0, 0) // Стоит на месте!
+                        });
+                        return; // Выходим из текущей итерации, не применяя случайный разлет
                     }
 
-                    // УМЕНЬШЕНО В 3 РАЗА: Вместо 1.8 ставим 0.6
-                    explodeVec.multiplyScalar(0.9);
+                    let explodeVec = new THREE.Vector3();
 
-                    // УМЕНЬШЕНО В 3 РАЗА: Вертикальный подъем теперь 0.15 вместо 0.5
-                    explodeVec.y += 0.25;
+                    // 2. РУЧНОЙ КОНТРОЛЬ ДЛЯ ВАЖНЫХ МОДУЛЕЙ
+                    if (nameLower.includes('bonnet')) {
+                        // Капот аккуратно летит вперед (по оси Z) и немного вверх
+                        explodeVec.set(0, 0.4, 0.8);
+                    } 
+                    else if (nameLower.includes('transport_module')) {
+                        // Корыто для груза летит назад (минус по Z) и приподнимается вверх
+                        explodeVec.set(0, 0.5, -0.9);
+                    } 
+                    else {
+                        // 3. СЛУЧАЙНЫЙ РАЗЛЕТ ДЛЯ ВСЕХ ОСТАЛЬНЫХ ДЕТАЛЕЙ (уменьшен в 3 раза)
+                        const worldPos = new THREE.Vector3();
+                        child.getWorldPosition(worldPos);
+
+                        explodeVec = worldPos.clone().normalize();
+
+                        // Защита от нулевого центра
+                        if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
+                            explodeVec.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2).normalize();
+                        }
+
+                        // Умножаем на 0.6 (в 3 раза меньше первоначального)
+                        explodeVec.multiplyScalar(0.6);
+                        // Легкий подъем вверх для объема
+                        explodeVec.y += 0.15;
+                    }
 
                     parts.push({
                         mesh: child,
@@ -208,7 +231,6 @@
 
             loaderStatus.style.display = 'none';
 
-            // Логика клика
             container.addEventListener('click', () => {
                 isExploded = !isExploded;
                 hint.innerText = isExploded ? "СБОРКА МОДУЛЕЙ" : "ДЕТАЛИЗАЦИЯ ПРОТОТИПА";
