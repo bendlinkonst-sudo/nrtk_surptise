@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Интерактивная 3D Платформа</title>
+    <title>НआरटीК «ТАНК» — Интерактивная Платформа</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,17 +13,61 @@
 
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0a0c10;
+            background: linear-gradient(135deg, #050811 0%, #0b1121 50%, #161f36 100%);
             color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             overflow-x: hidden;
         }
 
-        /* Контейнер для 3D сцены */
+        /* --- ВЕРХНЯЯ ШАПКА САЙТА (КАК БЫЛО) --- */
+        header {
+            background: rgba(10, 15, 30, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+        }
+
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0,255,204,0.5);
+        }
+
+        /* --- КОНТЕЙНЕР ДЛЯ 3D СЦЕНЫ --- */
         #canvas-container {
+            flex: 1;
             width: 100%;
-            height: 100vh; /* Растягиваем на весь экран, чтобы было красиво */
             position: relative;
             overflow: hidden;
+            background: transparent; /* Прозрачный холст, чтобы был виден градиент body */
         }
 
         /* Слой для HTML-табличек поверх 3D холста */
@@ -33,7 +77,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Клик сквозь слой, чтобы можно было крутить модель */
+            pointer-events: none;
             z-index: 10;
         }
 
@@ -42,9 +86,9 @@
             position: absolute;
             display: flex;
             align-items: center;
-            transform: translate(-15px, -15px); /* Центрируем точку */
+            transform: translate(-15px, -15px);
             transition: opacity 0.2s ease;
-            pointer-events: auto; /* А на саму карточку нажимать можно */
+            pointer-events: auto;
         }
 
         /* Светящаяся точка на детали */
@@ -68,20 +112,19 @@
 
         /* Всплывающая карточка с текстом */
         .label-card {
-            background: rgba(15, 22, 36, 0.9);
+            background: rgba(15, 22, 36, 0.95);
             border: 1px solid rgba(0, 255, 204, 0.3);
             padding: 12px 16px;
             border-radius: 8px;
             margin-left: 15px;
-            width: 220px;
+            width: 240px;
             backdrop-filter: blur(5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
             opacity: 0;
             transform: translateX(-10px);
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        /* Показываем карточку при наведении на точку или саму карточку */
         .part-label:hover .label-card {
             opacity: 1;
             transform: translateX(0);
@@ -101,135 +144,136 @@
             line-height: 1.4;
         }
 
-        /* Ползунок управления взрывом (внизу экрана) */
+        /* --- ПОЛЗУНОК УПРАВЛЕНИЯ ВЗРЫВОМ --- */
         .controls-panel {
             position: absolute;
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 22, 36, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 15px 30px;
+            background: rgba(10, 15, 30, 0.85);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 15px 35px;
             border-radius: 50px;
             display: flex;
             align-items: center;
             gap: 20px;
             backdrop-filter: blur(10px);
             z-index: 100;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
         }
 
         .controls-panel label {
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 1px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
             color: #00ffcc;
         }
 
         .controls-panel input[type="range"] {
-            width: 250px;
+            width: 280px;
             accent-color: #00ffcc;
             cursor: pointer;
         }
     </style>
 
-    /* Подключаем библиотеки Three.js и OrbitControls для вращения камеры */
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
+    <header>
+        <div class="logo">НआरटीК Платформа</div>
+        <nav>
+            <a href="#">Главная</a>
+            <a href="#">Спецификации</a>
+            <a href="#">Контакты</a>
+        </nav>
+    </header>
+
     <div id="canvas-container">
         <div class="labels-overlay" id="labels-container"></div>
         
         <div class="controls-panel">
-            <label for="explodeSlider">РАЗБОРКА ПЛАТФОРМЫ</label>
+            <label for="explodeSlider">КОНФИГУРАЦИЯ СБОРКИ</label>
             <input type="range" id="explodeSlider" min="0" max="1" step="0.01" value="0">
         </div>
     </div>
 
     <script>
-        // Глобальные переменные Three.js
         let scene, camera, renderer, controls;
         let robotModel = null;
-        let activeLabels = []; // Тут хранятся связи деталей и табличек
+        let activeLabels = []; 
 
         const container = document.getElementById('canvas-container');
         const labelsContainer = document.getElementById('labels-container');
         const explodeSlider = document.getElementById('explodeSlider');
 
-        // Инициализация сцены
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0c10);
+            // Делаем сцену прозрачной, чтобы просвечивал наш красивый градиентный фон CSS
+            scene.background = null; 
 
             // Камера
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(0, 2, 5);
+            camera.position.set(0, 1.5, 4.5);
 
-            // Рендерер
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            // Рендерер с поддержкой прозрачности (alpha: true)
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Управление камерой (крутить мышем)
+            // Настройки вращения камеры
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 + 0.1; // Не даем камере уходить под пол
+            controls.maxPolarAngle = Math.PI / 2 + 0.1; 
 
-            // Освещение сцены
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            // Освещение (неоновые оттенки под стать фону)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
             scene.add(ambientLight);
 
-            const dirLight1 = new THREE.DirectionalLight(0x00ffcc, 0.8);
+            const dirLight1 = new THREE.DirectionalLight(0x00ffcc, 0.9);
             dirLight1.position.set(5, 10, 7);
             scene.add(dirLight1);
 
-            const dirLight2 = new THREE.DirectionalLight(0xff0055, 0.5);
+            const dirLight2 = new THREE.DirectionalLight(0xff0055, 0.45);
             dirLight2.position.set(-5, 5, -5);
             scene.add(dirLight2);
 
-            // Загрузка 3D модели робота
+            // Загрузка модели
             const loader = new THREE.GLTFLoader();
             loader.load('tank_nrtk.glb', function (gltf) {
                 robotModel = gltf.scene;
                 scene.add(robotModel);
 
-                // Автоматически центрируем модель в пространстве
+                // Центрируем робота
                 const box = new THREE.Box3().setFromObject(robotModel);
                 const center = box.getCenter(new THREE.Vector3());
                 robotModel.position.sub(center);
 
-                // Перебираем детали робота
+                // Настраиваем логику разбора и авто-табличек
                 robotModel.traverse((child) => {
                     if (child.isMesh) {
-                        // Запоминаем стартовую позицию для взрыва
                         child.userData.originalPosition = child.position.clone();
                         
-                        // Считаем вектор разлета (от центра робота наружу)
                         const worldPosition = new THREE.Vector3();
                         child.getWorldPosition(worldPosition);
                         child.userData.explosionDirection = worldPosition.clone().normalize();
 
-                        // --- АВТОМАТИЧЕСКАЯ НАСТРОЙКА ТАБЛИЧЕК ---
+                        // Логика умного отбора названий
                         const rawName = child.name || '';
-                        
-                        // Проверяем, что имя нормальное, а не технический мусор
                         const isTechnical = rawName.toLowerCase().includes('cube') || 
                                             rawName.toLowerCase().includes('plane') || 
                                             rawName.toLowerCase().includes('mesh') ||
                                             rawName.toLowerCase().includes('amateur');
 
                         if (rawName.length > 2 && !isTechnical) {
-                            // Очищаем имя от всяких суффиксов вроде _01 или .002
                             let cleanName = rawName.split(/[_\.]/)[0]; 
                             cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
-                            // Создаем HTML-табличку в слое над холстом
                             const label = document.createElement('div');
                             label.className = 'part-label';
                             label.innerHTML = `
@@ -241,7 +285,6 @@
                             `;
                             labelsContainer.appendChild(label);
 
-                            // Связываем 3D-меш и 2D-табличку вместе
                             activeLabels.push({
                                 mesh: child,
                                 labelDOM: label
@@ -252,27 +295,22 @@
 
                 animate();
             }, undefined, function (error) {
-                console.error('Ошибка загрузки модели tank_nrtk.glb:', error);
+                console.error('Ошибка загрузки модели:', error);
             });
 
-            // Слушатель изменения размера окна
             window.addEventListener('resize', onWindowResize);
         }
 
-        // Обновление позиций табличек на экране (перевод 3D координат в 2D)
+        // Перевод 3D позиций в экранные пиксели
         function updateLabelsPositions() {
             if (!robotModel) return;
 
             const tempV = new THREE.Vector3();
 
             activeLabels.forEach((part) => {
-                // Получаем мировую 3D-позицию детали
                 part.mesh.getWorldPosition(tempV);
-
-                // Проецируем 3D координаты на 2D экран камеры
                 tempV.project(camera);
 
-                // Если деталь оказалась за камерой, прячем табличку
                 if (tempV.z > 1) {
                     part.labelDOM.style.display = 'none';
                     return;
@@ -280,56 +318,43 @@
                     part.labelDOM.style.display = 'flex';
                 }
 
-                // Переводим проекцию (-1 до 1) в пиксели экрана
                 const x = (tempV.x * .5 + .5) * container.clientWidth;
                 const y = (tempV.y * -.5 + .5) * container.clientHeight;
 
-                // Двигаем HTML-элемент таблички
                 part.labelDOM.style.left = `${x}px`;
                 part.labelDOM.style.top = `${y}px`;
             });
         }
 
-        // Логика взрыва (разлета деталей) по ползунку
+        // Движение деталей ползунком
         function updateExplosion() {
             if (!robotModel) return;
             
-            const factor = parseFloat(explodeSlider.value) * 1.5; // Сила разлета
+            const factor = parseFloat(explodeSlider.value) * 1.5; 
 
             robotModel.traverse((child) => {
                 if (child.isMesh && child.userData.originalPosition && child.userData.explosionDirection) {
-                    // Считаем смещение: оригинальная позиция + (направление * коэффициент ползунка)
                     const offset = child.userData.explosionDirection.clone().multiplyScalar(factor);
                     child.position.copy(child.userData.originalPosition).add(offset);
                 }
             });
         }
 
-        // Обработчик ползунка разборки
         explodeSlider.addEventListener('input', updateExplosion);
 
-        // Функция рендера и обновления кадров
         function animate() {
             requestAnimationFrame(animate);
-
-            // Обновляем физику мыши камеры
             controls.update();
-
-            // Пересчитываем координаты табличек на каждом кадре, чтобы они не отставали
             updateLabelsPositions();
-
-            // Рисуем сцену
             renderer.render(scene, camera);
         }
 
-        // Корректное масштабирование при изменении размеров окна браузера
         function onWindowResize() {
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
         }
 
-        // Запуск
         init();
     </script>
 </body>
