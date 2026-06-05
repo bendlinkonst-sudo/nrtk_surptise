@@ -236,11 +236,11 @@
             'rama': 'Основное шасси / Рама',
             'chassis': 'Основное шасси / Рама',
             'base': 'Основное шасси / Рама',
-            'bonnet': 'Защитный капот ДВС',
-            'transport_module': 'Грузовой отсек',
+            'Bonnet': 'Защитный капот ДВС',
+            'Transport_module': 'Грузовой отсек',
             'wheel': 'Элемент ходовой части',
             'track': 'Гусеничный движитель',
-            'motor': 'Тяговый электропривод',
+            'Motor': 'Тяговый электропривод',
             'sensor': 'Навигационный комплекс'
         };
 
@@ -274,9 +274,9 @@
                     }
 
                     // Настройка векторов движения деталей
-                    if (combinedName.includes('body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis') || combinedName.includes('base')) {
+                    if (combinedName.includes('Body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis') || combinedName.includes('base')) {
                         explodeVec.set(0, 0, 0); 
-                    } else if (combinedName.includes('bonnet')) {
+                    } else if (combinedName.includes('Bonnet')) {
                         explodeVec.set(0, 0.7, 0.9); // Чуть выше и вперед
                     } else if (combinedName.includes('transport_module')) {
                         explodeVec.set(0, 0.7, -0.9); // Чуть выше и назад
