@@ -67,34 +67,40 @@
         .nav-link { color: #fff; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
+        /* Контейнер для 3D */
         #canvas-container {
             width: 100%;
             height: 600px; 
             margin-top: 20px;
             position: relative;
-            cursor: pointer;
         }
 
-        #hint {
+        /* НЕОНОВАЯ ИНЖЕНЕРНАЯ КНОПКА */
+        #explode-btn {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
-            border: 1px solid var(--neon-blue);
-            border-radius: 20px;
-            font-size: 12px;
-            pointer-events: none;
-            animation: pulse 2s infinite;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border: 2px solid var(--neon-blue);
+            padding: 12px 35px;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+            transition: all 0.3s ease;
+            z-index: 10; /* Кнопка строго поверх 3D сцены */
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.5; }
-            50% { opacity: 1; }
-            100% { opacity: 0.5; }
+        #explode-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 25px var(--neon-blue);
+            text-shadow: none;
         }
 
         #loader-status {
@@ -124,7 +130,8 @@
 
     <div id="canvas-container">
         <div id="loader-status">СКАНИРОВАНИЕ СИСТЕМ...</div>
-        <div id="hint">КЛИКНИТЕ ДЛЯ ДЕТАЛИЗАЦИИ</div>
+        
+        <button id="explode-btn" style="display: none;">Детализация прототипа</button>
     </div>
 
     <script type="importmap">
@@ -143,7 +150,7 @@
 
         const container = document.getElementById('canvas-container');
         const loaderStatus = document.getElementById('loader-status');
-        const hint = document.getElementById('hint');
+        const explodeBtn = document.getElementById('explode-btn');
         
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -183,35 +190,30 @@
                     const nameLower = child.name ? child.name.toLowerCase() : '';
                     let explodeVec = new THREE.Vector3();
 
-                    // 1. РАСШИРЕННЫЙ ФИЛЬТР ДЛЯ КОРПУСА (РАМЫ)
-                    // Расширяем имена, чтобы точно поймать железную основу танка
+                    // 1. ФИЛЬТР ДЛЯ КОРПУСА (РАМЫ)
                     if (nameLower.includes('body') || nameLower.includes('skelet') || nameLower.includes('rama') || nameLower.includes('chassis') || nameLower.includes('base')) {
-                        explodeVec.set(0, 0, 0); // Намертво фиксируем в центре
+                        explodeVec.set(0, 0, 0); 
                     } 
-                    // 2. РУЧНОЙ КОНТРОЛЬ КАПОТА (Строго вверх и вперед)
+                    // 2. РУЧНОЙ КОНТРОЛЬ КАПОТА 
                     else if (nameLower.includes('bonnet')) {
-                        explodeVec.set(0, 0.6, 0.8); // Увеличил подъем вверх, чтобы гарантированно оторвать от рамы
+                        explodeVec.set(0, 0.6, 0.8); 
                     } 
-                    // 3. РУЧНОЙ КОНТРОЛЬ КОРЫТА (Строго вверх и назад)
+                    // 3. РУЧНОЙ КОНТРОЛЬ КОРЫТА 
                     else if (nameLower.includes('transport_module')) {
                         explodeVec.set(0, 0.6, -0.8); 
                     } 
-                    // 4. ДЛЯ ВСЕХ ОСТАЛЬНЫХ ДЕТАЛЕЙ — СТАНДАРТНЫЙ УМЕНЬШЕННЫЙ РАЗЛЕТ
+                    // 4. ОСТАЛЬНЫЕ ДЕТАЛИ
                     else {
                         const worldPos = new THREE.Vector3();
                         child.getWorldPosition(worldPos);
 
                         explodeVec = worldPos.clone().normalize();
 
-                        // Если деталь застряла в центре, даем легкий импульс вбок
                         if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
                             explodeVec.set((Math.random() - 0.5) * 2, 0.2, (Math.random() - 0.5) * 2).normalize();
                         }
 
-                        // Умножаем на 0.6 (в 3 раза меньше от первоначального)
                         explodeVec.multiplyScalar(0.6);
-                        
-                        // Небольшой подъем вверх для объема, но только если это не рама
                         explodeVec.y += 0.15;
                     }
 
@@ -224,10 +226,13 @@
             });
 
             loaderStatus.style.display = 'none';
+            explodeBtn.style.display = 'block'; // Показываем кнопку после загрузки модели
 
-            container.addEventListener('click', () => {
+            // КЛИК СНЯТ С КОНТЕНЕРА И ПЕРЕНЕСЕН СТРОГО НА КНОПКУ
+            explodeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Защита, чтобы клик не улетал в Three.js
                 isExploded = !isExploded;
-                hint.innerText = isExploded ? "СБОРКА МОДУЛЕЙ" : "ДЕТАЛИЗАЦИЯ ПРОТОТИПА";
+                explodeBtn.innerText = isExploded ? "Сборка модулей" : "Детализация прототипа";
             });
 
             function animate() {
