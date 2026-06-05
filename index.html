@@ -92,7 +92,7 @@
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
             transition: all 0.3s ease;
-            z-index: 2000; /* Кнопка ВСЕГДА поверх выносок */
+            z-index: 2000;
         }
 
         #explode-btn:hover {
@@ -114,7 +114,7 @@
         .labels-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* Пропускает клики к 3D-сцене */
+            pointer-events: none; 
             z-index: 1000;
         }
 
@@ -123,7 +123,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            transform: translate(-50%, -100%); /* Центрируем карточку ровно над деталью */
+            transform: translate(-50%, -100%); 
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.4s ease-out;
@@ -225,11 +225,9 @@
 
         let isExploded = false;
         const parts = []; 
-        const activeLabels = []; // Тут храним данные для пересчета координат рамок
         let robotModel = null;
         const loader = new GLTFLoader();
 
-        // Наш инженерный словарь обозначений узлов
         const nameMapping = {
             'Body': 'Основное шасси / Рама',
             'skelet': 'Активная защита',
@@ -252,25 +250,28 @@
         loader.load('./tank_nrtk.glb', (gltf) => {
             robotModel = gltf.scene;
             
+            // Чтобы getWorldPosition работала идеально корректно, сначала добавляем модель в сцену
+            scene.add(robotModel);
+
+            // ИСПРАВЛЕНИЕ БАГА ЦЕНТРИРОВАНИЯ: Сдвигаем саму модель ПОСЛЕ добавления в сцену,
+            // чтобы Three.js обновил матрицы трансформации и правильно считал мировые координаты
             const box = new THREE.Box3().setFromObject(robotModel);
             const center = box.getCenter(new THREE.Vector3());
             robotModel.position.sub(center);
-            scene.add(robotModel);
+            
+            // Форсируем обновление матриц, чтобы getWorldPosition выдавал точные данные
+            robotModel.updateMatrixWorld(true);
 
             robotModel.traverse((child) => {
                 if (child.isMesh) {
-                    // УЛУЧШЕННЫЙ ПОИСК ИМЕНИ: ищем в самом меше ИЛИ в его родительской группе
                     const nameLower = child.name ? child.name.toLowerCase() : '';
                     const parentNameLower = (child.parent && child.parent.name) ? child.parent.name.toLowerCase() : '';
-                    
                     const combinedName = `${nameLower} ${parentNameLower}`;
 
                     let explodeVec = new THREE.Vector3();
                     let isMainPart = false;
                     let customTitle = '';
 
-                    // Проверяем совпадения по словарю
-                    // ИСПРАВЛЕНИЕ: Приводим ключ из словаря (key) к нижнему регистру перед поиском .includes()
                     for (const [key, value] of Object.entries(nameMapping)) {
                         if (combinedName.includes(key.toLowerCase())) {
                             isMainPart = true;
@@ -279,14 +280,12 @@
                         }
                     }
 
-                    // Настройка векторов движения деталей
-                    // ИСПРАВЛЕНИЕ: Все проверяемые строки переведены в нижний регистр ('body', 'bonnet')
                     if (combinedName.includes('body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis') || combinedName.includes('base')) {
                         explodeVec.set(0, 0, 0); 
                     } else if (combinedName.includes('bonnet')) {
-                        explodeVec.set(0, 0.7, 0.9); // Чуть выше и вперед
+                        explodeVec.set(0, 0.7, 0.9); 
                     } else if (combinedName.includes('transport_module')) {
-                        explodeVec.set(0, 0.7, -0.9); // Чуть выше и назад
+                        explodeVec.set(0, 0.7, -0.9); 
                     } else {
                         const worldPos = new THREE.Vector3();
                         child.getWorldPosition(worldPos);
@@ -299,7 +298,6 @@
                         explodeVec.y += 0.15;
                     }
 
-                    // Создаем DOM-элемент выноски, если деталь подходит по имени
                     let labelDOM = null;
                     if (isMainPart) {
                         const containerDiv = document.createElement('div');
@@ -340,7 +338,6 @@
                 isExploded = !isExploded;
                 explodeBtn.innerText = isExploded ? "Сборка модулей" : "Детализация прототипа";
 
-                // Управляем анимацией появления рамочек
                 parts.forEach(part => {
                     if (part.labelDOM) {
                         if (isExploded) {
@@ -352,7 +349,6 @@
                 });
             });
 
-            // Функция перевода 3D координат в 2D пиксели на экране
             function updateLabelsPositions() {
                 if (!isExploded) return;
 
@@ -362,13 +358,9 @@
 
                 parts.forEach(part => {
                     if (part.labelDOM) {
-                        // Берём текущую мировую позицию летящей детали
                         part.mesh.getWorldPosition(tempV);
-                        
-                        // Проецируем 3D точку на камеру (получаем значения от -1 до 1)
                         tempV.project(camera);
 
-                        // Проверяем, находится ли деталь за спиной у камеры
                         if (tempV.z > 1) {
                             part.labelDOM.style.display = 'none';
                             return;
@@ -376,11 +368,9 @@
                             part.labelDOM.style.display = 'flex';
                         }
 
-                        // Переводим нормализованные координаты в пиксели CSS
                         const x = (tempV.x * widthHalf) + widthHalf;
                         const y = -(tempV.y * heightHalf) + heightHalf;
 
-                        // Сдвигаем HTML-элемент рамочки на эти пиксели
                         part.labelDOM.style.left = `${x}px`;
                         part.labelDOM.style.top = `${y}px`;
                     }
@@ -403,9 +393,10 @@
                 }
                 
                 controls.update();
-                renderer.render(scene, camera);
                 
-                // Пересчитываем положение рамочек на каждом кадре
+                // ИСПРАВЛЕНИЕ: Сначала рендерим сцену, чтобы все меши заняли новые lerp-позиции,
+                // и только потом считаем проекции для HTML-табличек! Тогда не будет лагов.
+                renderer.render(scene, camera);
                 updateLabelsPositions();
             }
             animate();
