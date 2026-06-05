@@ -180,25 +180,23 @@
             // Бежим по всем мешам модели
             robotModel.traverse((child) => {
                 if (child.isMesh) {
-                    // ТАКТИКА РАЗЛЕТА ОТ ЦЕНТРА: 
-                    // Вместо локальных координат (которые SketchUp мог сбросить в 0),
-                    // мы получаем РЕАЛЬНОЕ положение детали на экране относительно центра робота.
+                    // Вычисляем глобальное положение
                     const worldPos = new THREE.Vector3();
                     child.getWorldPosition(worldPos);
 
-                    // Создаем вектор направления «из центра робота во внешнюю сторону»
+                    // Создаем вектор направления «из центра наружу»
                     let explodeVec = worldPos.clone().normalize();
 
-                    // Если деталь оказалась ровно в центре, дадим ей случайное направление, чтобы не залипала
+                    // Защита от нулевых координат центра
                     if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
                         explodeVec.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2).normalize();
                     }
 
-                    // Умножаем на коэффициент, чтобы они разлетались на красивое расстояние (примерно 1.8-2.0 единицы)
-                    explodeVec.multiplyScalar(1.8);
+                    // УМЕНЬШЕНО В 3 РАЗА: Вместо 1.8 ставим 0.6
+                    explodeVec.multiplyScalar(0.6);
 
-                    // Чтобы детальки летели еще красивее, заставим их немного приподниматься (эффект разбора на стенде)
-                    explodeVec.y += 0.5;
+                    // УМЕНЬШЕНО В 3 РАЗА: Вертикальный подъем теперь 0.15 вместо 0.5
+                    explodeVec.y += 0.15;
 
                     parts.push({
                         mesh: child,
@@ -210,7 +208,7 @@
 
             loaderStatus.style.display = 'none';
 
-            // Клик
+            // Логика клика
             container.addEventListener('click', () => {
                 isExploded = !isExploded;
                 hint.innerText = isExploded ? "СБОРКА МОДУЛЕЙ" : "ДЕТАЛИЗАЦИЯ ПРОТОТИПА";
@@ -224,7 +222,6 @@
                         ? part.originalPos.clone().add(part.explodeVec) 
                         : part.originalPos;
                     
-                    // Самый надежный и плавный линейный переход (lerp)
                     part.mesh.position.lerp(target, 0.08); 
                 });
 
