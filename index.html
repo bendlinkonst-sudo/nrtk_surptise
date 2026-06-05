@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>НРТК СЮРПРИЗ | Взрыв-схема</title>
+    <title>НРТК СЮРПРИЗ | Инженерный разбор</title>
     
     <script>
         if (localStorage.getItem('isLoggedIn') !== 'true') {
@@ -147,7 +147,7 @@
         
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 5, 10);
+        camera.position.set(0, 4, 8);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -170,6 +170,7 @@
         loader.load('./tank_nrtk.glb', (gltf) => {
             const model = gltf.scene;
             
+            // Центрируем общую модель
             const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
             model.position.sub(center);
@@ -177,11 +178,49 @@
 
             model.traverse((child) => {
                 if (child.isMesh) {
+                    const name = child.name;
+                    let explodeVec = new THREE.Vector3(0, 0, 0); // По умолчанию деталь стоит
+
+                    // 1. Внутренняя начинка выходит наверх
+                    if (name.includes('Driver') || name.includes('Motor_') || name.includes('Battery') || name.includes('Electronics')) {
+                        explodeVec.set(0, 1.2, 0); // Сдвиг строго вверх
+                    }
+                    // 2. Камера и антенна поднимаются еще выше
+                    else if (name.includes('Camera') || name.includes('antenna')) {
+                        explodeVec.set(0, 2.0, 0); // Выше всей начинки
+                    }
+                    // 3. Капот открывается вперед и вверх
+                    else if (name.includes('Bonnet')) {
+                        explodeVec.set(0, 0.6, 1.0); 
+                    }
+                    // 4. Транспортный модуль отходит назад
+                    else if (name.includes('transport_module')) {
+                        explodeVec.set(0, 0, -1.2);
+                    }
+                    // 5. Левая сторона отходит влево
+                    else if (name.includes('_left')) {
+                        explodeVec.set(-1.2, 0, 0);
+                    }
+                    // 6. Правая сторона отходит вправо
+                    else if (name.includes('_right')) {
+                        explodeVec.set(1.2, 0, 0);
+                    }
+                    // 7. Обработка множества колес (roller_wheel)
+                    else if (name.includes('roller_wheel')) {
+                        // Если колесо изначально находится слева от центра — двигаем влево, иначе вправо
+                        // Для этого смотрим на мировое или локальное положение (определим по знаку X)
+                        if (child.position.x < 0) {
+                            explodeVec.set(-1.2, 0, 0);
+                        } else {
+                            explodeVec.set(1.2, 0, 0);
+                        }
+                    }
+                    // Body и skelet остаются на месте (explodeVec = 0,0,0)
+
                     parts.push({
                         mesh: child,
                         originalPos: child.position.clone(),
-                        // Дистанция уменьшена в 3 раза (было 3, стало 1)
-                        explodeVec: child.position.clone().normalize().multiplyScalar(1) 
+                        explodeVec: explodeVec
                     });
                 }
             });
@@ -201,10 +240,17 @@
                         ? part.originalPos.clone().add(part.explodeVec) 
                         : part.originalPos;
                     
-                    part.mesh.position.lerp(target, 0.1);
+                    // Плавное интерполирование позиций
+                    part.mesh.position.lerp(target, 0.08); 
                 });
 
-                if (!isExploded) model.rotation.y += 0.002;
+                // Вращаем робота только когда он собран, чтобы было удобно рассматривать разлет
+                if (!isExploded) {
+                    model.rotation.y += 0.002;
+                } else {
+                    // Медленное затухание вращения или фиксация
+                    model.rotation.y *= 0.98; 
+                }
                 
                 controls.update();
                 renderer.render(scene, camera);
