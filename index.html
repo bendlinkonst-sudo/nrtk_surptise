@@ -147,7 +147,7 @@
         
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(0, 4, 8);
+        camera.position.set(0, 5, 10); // Немного отдалили камеру, чтобы разлет помещался
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -164,105 +164,106 @@
         controls.enableDamping = true;
 
         let isExploded = false;
-        const parts = []; 
+        const animatedObjects = []; // Здесь будем хранить ГРУППЫ или МЕШИ верхнего уровня
         let robotModel = null;
         const loader = new GLTFLoader();
 
         loader.load('./tank_nrtk.glb', (gltf) => {
             robotModel = gltf.scene;
             
+            // Центрируем модель
             const box = new THREE.Box3().setFromObject(robotModel);
             const center = box.getCenter(new THREE.Vector3());
             robotModel.position.sub(center);
             scene.add(robotModel);
 
-            console.log("--- СТАРТ АНАЛИЗА МОДЕЛИ ---");
+            console.log("--- ИНИЦИАЛИЗАЦИЯ СТРУКТУРЫ МОДЕЛЕЙ ---");
 
-            robotModel.traverse((child) => {
-                if (child.isMesh) {
-                    // Берём имя самого меша ИЛИ имя его родительского объекта (важно для SketchUp групп!)
-                    const name = child.name || "";
-                    const parentName = (child.parent && child.parent.name) ? child.parent.name : "";
+            // Проходимся по дереву объектов. Нам нужно найти те узлы, чьи ИМЕНА соответствуют модулям.
+            // Чтобы не двигать внутренние меши отдельно, мы ищем самый верхний объект с нужным именем.
+            robotModel.traverse((obj) => {
+                if (!obj.name) return;
+
+                const nameLower = obj.name.toLowerCase();
+                let explodeVec = null;
+
+                // Задаем явные и мощные векторы разлета для ЦЕЛЫХ узлов (дистанция ~ 2.5 - 4.0 единицы)
+                if (nameLower.includes('driver') || nameLower.includes('motor_') || nameLower.includes('battery') || nameLower.includes('electronics')) {
+                    explodeVec = new THREE.Vector3(0, 3.0, 0); // Внутренности мощно идут вверх
+                } 
+                else if (nameLower.includes('camera') || nameLower.includes('antenna')) {
+                    explodeVec = new THREE.Vector3(0, 4.5, 0); // Камера и антенна летят в стратосферу над начинкой
+                } 
+                else if (nameLower.includes('bonnet')) {
+                    explodeVec = new THREE.Vector3(0, 1.5, 3.0); // Капот откидывается вперед и вверх
+                } 
+                else if (nameLower.includes('transport_module')) {
+                    explodeVec = new THREE.Vector3(0, 0, -3.5); // Модуль уходит далеко назад
+                } 
+                else if (nameLower.includes('_left')) {
+                    explodeVec = new THREE.Vector3(-3.5, 0, 0); // Левые крылья/гусеницы уходят влево
+                } 
+                else if (nameLower.includes('_right')) {
+                    explodeVec = new THREE.Vector3(3.5, 0, 0); // Правые крылья/гусеницы уходят вправо
+                } 
+                else if (nameLower.includes('roller_wheel')) {
+                    // Колёса: определяем сторону по мировому положению группы
+                    const worldPos = new THREE.Vector3();
+                    obj.getWorldPosition(worldPos);
+                    // Если группа правее центра — вправо, иначе — влево
+                    explodeVec = new THREE.Vector3(worldPos.x >= 0 ? 3.5 : -3.5, 0, 0);
+                }
+
+                // Если мы нашли совпадение по имени модуля, сохраняем ИМЕННО ЭТОТ объект (будь то Group или Mesh)
+                if (explodeVec) {
+                    // Важно: чтобы не дублировать анимацию внутренних элементов, 
+                    // мы должны убедиться, что их родитель уже не анимируется.
+                    // Но так как traverse идет сверху вниз, мы поймаем верхнюю группу первой!
                     
-                    // Собираем всё в одну строчку в нижнем регистре для поиска
-                    const fullNameInfo = (name + " " + parentName).toLowerCase();
-
-                    let explodeVec = new THREE.Vector3(0, 0, 0);
-
-                    // 1. Внутренняя начинка выходит наверх
-                    if (fullNameInfo.includes('driver') || fullNameInfo.includes('motor_') || fullNameInfo.includes('battery') || fullNameInfo.includes('electronics')) {
-                        explodeVec.set(0, 1.5, 0); 
-                    }
-                    // 2. Камера и антенна поднимаются еще выше
-                    else if (fullNameInfo.includes('camera') || fullNameInfo.includes('antenna')) {
-                        explodeVec.set(0, 2.5, 0); 
-                    }
-                    // 3. Капот открывается вперед и вверх
-                    else if (fullNameInfo.includes('bonnet')) {
-                        explodeVec.set(0, 0.8, 1.2); 
-                    }
-                    // 4. Транспортный модуль отходит назад
-                    else if (fullNameInfo.includes('transport_module')) {
-                        explodeVec.set(0, 0, -1.5);
-                    }
-                    // 5. Левая сторона отходит влево
-                    else if (fullNameInfo.includes('_left')) {
-                        explodeVec.set(-1.5, 0, 0);
-                    }
-                    // 6. Правая сторона отходит вправо
-                    else if (fullNameInfo.includes('_right')) {
-                        explodeVec.set(1.5, 0, 0);
-                    }
-                    // 7. Катки (roller_wheel)
-                    else if (fullNameInfo.includes('roller_wheel')) {
-                        // Если есть точные координаты, берем их знак, иначе делим по четности
-                        if (child.position.x !== 0) {
-                            explodeVec.set(child.position.x > 0 ? 1.5 : -1.5, 0, 0);
-                        } else {
-                            explodeVec.set(parts.length % 2 === 0 ? 1.5 : -1.5, 0, 0);
+                    // Проверяем, нет ли уже родителя этого объекта в списке анимации
+                    let hasAnimatedParent = false;
+                    let parent = obj.parent;
+                    while (parent) {
+                        if (animatedObjects.some(item => item.obj === parent)) {
+                            hasAnimatedParent = true;
+                            break;
                         }
+                        parent = parent.parent;
                     }
 
-                    // Если деталь не попала ни под один фильтр, дадим ей базовый небольшой разлет от центра, чтобы она не залипала
-                    if (explodeVec.length() === 0 && !fullNameInfo.includes('body') && !fullNameInfo.includes('skelet')) {
-                        explodeVec.set((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.5);
+                    if (!hasAnimatedParent) {
+                        console.log(`Зарегистрирован модуль в сборе: "${obj.name}" тип: ${obj.type}`);
+                        animatedObjects.push({
+                            obj: obj,
+                            originalPos: obj.position.clone(),
+                            explodeVec: explodeVec
+                        });
                     }
-
-                    // Вывод в консоль для проверки, что имя распозналось и вектор применился
-                    console.log(`Деталь: "${name}", Родитель: "${parentName}" -> Вектор взрыва:`, explodeVec);
-
-                    parts.push({
-                        mesh: child,
-                        originalPos: child.position.clone(),
-                        explodeVec: explodeVec
-                    });
                 }
             });
 
-            console.log(`Всего мешей зафиксировано для анимации: ${parts.length}`);
+            console.log(`Итого монолитных модулей готово к разлету: ${animatedObjects.length}`);
             loaderStatus.style.display = 'none';
 
-            // Безопасный клик
-            container.addEventListener('click', (event) => {
+            container.addEventListener('click', () => {
                 isExploded = !isExploded;
                 hint.innerText = isExploded ? "СБОРКА МОДУЛЕЙ" : "ДЕТАЛИЗАЦИЯ ПРОТОТИПА";
-                console.log("Клик зафиксирован! Состояние взрыва:", isExploded);
             });
 
             function animate() {
                 requestAnimationFrame(animate);
                 
-                // Перемещение деталей
-                for (let i = 0; i < parts.length; i++) {
-                    const part = parts[i];
+                // Плавно двигаем ЦЕЛЫЕ группы, все внутренности двигаются за ними автоматически
+                for (let i = 0; i < animatedObjects.length; i++) {
+                    const item = animatedObjects[i];
                     const target = isExploded 
-                        ? part.originalPos.clone().add(part.explodeVec) 
-                        : part.originalPos;
+                        ? item.originalPos.clone().add(item.explodeVec) 
+                        : item.originalPos;
                     
-                    part.mesh.position.lerp(target, 0.1); 
+                    item.obj.position.lerp(target, 0.07); // Сделал чуть-чуть плавнее (0.07 вместо 0.1)
                 }
 
-                // Вращение только в собранном состоянии
+                // Вращение базы
                 if (!isExploded && robotModel) {
                     robotModel.rotation.y += 0.003;
                 }
