@@ -67,7 +67,6 @@
         .nav-link { color: #fff; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
-        /* Контейнер для 3D */
         #canvas-container {
             width: 100%;
             height: 600px; 
@@ -75,7 +74,6 @@
             position: relative;
         }
 
-        /* НЕОНОВАЯ ИНЖЕНЕРНАЯ КНОПКА */
         #explode-btn {
             position: absolute;
             bottom: 30px;
@@ -93,14 +91,13 @@
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
             transition: all 0.3s ease;
-            z-index: 10; /* Кнопка строго поверх 3D сцены */
+            z-index: 100;
         }
 
         #explode-btn:hover {
             background: var(--neon-blue);
             color: #000;
             box-shadow: 0 0 25px var(--neon-blue);
-            text-shadow: none;
         }
 
         #loader-status {
@@ -109,6 +106,55 @@
             transform: translate(-50%, -50%);
             font-family: monospace;
             text-shadow: 0 0 10px var(--neon-blue);
+            z-index: 10;
+        }
+
+        /* СТИЛИЗАЦИЯ ИНЖЕНЕРНЫХ РАМОЧЕК С НАЗВАНИЕМ */
+        .tech-label-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            opacity: 0; /* Изначально скрыты */
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .tech-label-container.visible {
+            opacity: 1;
+        }
+
+        /* Сама неоновая рамочка */
+        .tech-card {
+            background: rgba(0, 10, 20, 0.85);
+            border: 1px solid var(--neon-blue);
+            padding: 6px 12px;
+            border-radius: 3px;
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.3), inset 0 0 5px rgba(0, 242, 255, 0.2);
+        }
+
+        /* Стрелочка-линия, идущая вниз к детали */
+        .tech-pointer {
+            width: 2px;
+            height: 40px; /* Длина стрелочки */
+            background: linear-gradient(to bottom, var(--neon-blue), rgba(0, 242, 255, 0));
+            box-shadow: 0 0 5px var(--neon-blue);
+        }
+
+        /* Точка соприкосновения с деталью */
+        .tech-dot {
+            width: 4px;
+            height: 4px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ffffff, 0 0 15px var(--neon-blue);
         }
     </style>
 </head>
@@ -130,7 +176,6 @@
 
     <div id="canvas-container">
         <div id="loader-status">СКАНИРОВАНИЕ СИСТЕМ...</div>
-        
         <button id="explode-btn" style="display: none;">Детализация прототипа</button>
     </div>
 
@@ -147,12 +192,16 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        // Подключаем специальный рендерер текстовых слоев поверх WebGL
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
         const container = document.getElementById('canvas-container');
         const loaderStatus = document.getElementById('loader-status');
         const explodeBtn = document.getElementById('explode-btn');
         
         const scene = new THREE.Scene();
+        
+        // Основной WebGL камера и рендерер
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
         camera.position.set(0, 4, 8);
 
@@ -161,6 +210,14 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
+
+        // Инициализируем 2D-рендерер для HTML-рамочек
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(container.clientWidth, container.clientHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none'; // Чтобы не мешал крутить мышку
+        container.appendChild(labelRenderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 1.2));
         const sun = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -172,49 +229,95 @@
 
         let isExploded = false;
         const parts = []; 
+        const labelElements = []; // Хранилище для управления видимостью рамок
         let robotModel = null;
         const loader = new GLTFLoader();
+
+        // Словарь красивых имен (если в имени файла есть ключ, покажем красивый текст)
+        const nameMapping = {
+            'body': 'Основное шасси / Рама',
+            'skelet': 'Основное шасси / Рама',
+            'rama': 'Основное шасси / Рама',
+            'chassis': 'Основное шасси / Рама',
+            'bonnet': 'Защитный капот ДВС',
+            'transport_module': 'Грузовой отсек',
+            'wheel': 'Ведущее колесо',
+            'track': 'Гусеничная лента',
+            'motor': 'Электропривод',
+            'sensor': 'Модуль навигации'
+        };
 
         loader.load('./tank_nrtk.glb', (gltf) => {
             robotModel = gltf.scene;
             
-            // Центрируем общую модель на сцене
             const box = new THREE.Box3().setFromObject(robotModel);
             const center = box.getCenter(new THREE.Vector3());
             robotModel.position.sub(center);
             scene.add(robotModel);
 
-            // Бежим по всем мешам модели
             robotModel.traverse((child) => {
                 if (child.isMesh) {
                     const nameLower = child.name ? child.name.toLowerCase() : '';
                     let explodeVec = new THREE.Vector3();
+                    let isMainPart = false;
+                    let customTitle = '';
 
-                    // 1. ФИЛЬТР ДЛЯ КОРПУСА (РАМЫ)
+                    // Проверяем, заслуживает ли деталь отдельной рамочки
+                    for (const [key, value] of Object.entries(nameMapping)) {
+                        if (nameLower.includes(key)) {
+                            isMainPart = true;
+                            customTitle = value;
+                            break;
+                        }
+                    }
+
+                    // 1. НАСТРОЙКА РАЗЛЕТА
                     if (nameLower.includes('body') || nameLower.includes('skelet') || nameLower.includes('rama') || nameLower.includes('chassis') || nameLower.includes('base')) {
                         explodeVec.set(0, 0, 0); 
-                    } 
-                    // 2. РУЧНОЙ КОНТРОЛЬ КАПОТА 
-                    else if (nameLower.includes('bonnet')) {
+                    } else if (nameLower.includes('bonnet')) {
                         explodeVec.set(0, 0.6, 0.8); 
-                    } 
-                    // 3. РУЧНОЙ КОНТРОЛЬ КОРЫТА 
-                    else if (nameLower.includes('transport_module')) {
+                    } else if (nameLower.includes('transport_module')) {
                         explodeVec.set(0, 0.6, -0.8); 
-                    } 
-                    // 4. ОСТАЛЬНЫЕ ДЕТАЛИ
-                    else {
+                    } else {
                         const worldPos = new THREE.Vector3();
                         child.getWorldPosition(worldPos);
-
                         explodeVec = worldPos.clone().normalize();
 
                         if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
                             explodeVec.set((Math.random() - 0.5) * 2, 0.2, (Math.random() - 0.5) * 2).normalize();
                         }
-
                         explodeVec.multiplyScalar(0.6);
                         explodeVec.y += 0.15;
+                    }
+
+                    // 2. СОЗДАНИЕ НЕОНОВОЙ ВЫНОСКИ (РАМОЧКА С СТРЕЛОЧКОЙ)
+                    if (isMainPart) {
+                        // Создаем структуру HTML-элемента выноски
+                        const containerDiv = document.createElement('div');
+                        containerDiv.className = 'tech-label-container';
+
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'tech-card';
+                        cardDiv.innerText = customTitle || child.name; // Имя из словаря или оригинальное
+
+                        const pointerDiv = document.createElement('div');
+                        pointerDiv.className = 'tech-pointer';
+
+                        const dotDiv = document.createElement('div');
+                        dotDiv.className = 'tech-dot';
+
+                        // Собираем выноску: Карта -> Стрелка -> Точка
+                        containerDiv.appendChild(cardDiv);
+                        containerDiv.appendChild(pointerDiv);
+                        containerDiv.appendChild(dotDiv);
+
+                        // Оборачиваем HTML в объект Three.js и крепим прямо к мешу
+                        const cssLabel = new CSS2DObject(containerDiv);
+                        // Позиционируем рамку чуть выше центра детали
+                        cssLabel.position.set(0, 0.2, 0); 
+                        child.add(cssLabel);
+
+                        labelElements.push(containerDiv);
                     }
 
                     parts.push({
@@ -226,13 +329,23 @@
             });
 
             loaderStatus.style.display = 'none';
-            explodeBtn.style.display = 'block'; // Показываем кнопку после загрузки модели
+            explodeBtn.style.display = 'block';
 
-            // КЛИК СНЯТ С КОНТЕНЕРА И ПЕРЕНЕСЕН СТРОГО НА КНОПКУ
             explodeBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Защита, чтобы клик не улетал в Three.js
+                e.stopPropagation();
                 isExploded = !isExploded;
                 explodeBtn.innerText = isExploded ? "Сборка модулей" : "Детализация прототипа";
+
+                // Управление появлением рамочек
+                labelElements.forEach(el => {
+                    if (isExploded) {
+                        // Показываем рамочки с легкой задержкой, пока детали разлетаются
+                        setTimeout(() => { el.classList.add('visible'); }, 300);
+                    } else {
+                        // При сборке мгновенно тушим рамки, чтобы не засорять экран
+                        el.classList.remove('visible');
+                    }
+                });
             });
 
             function animate() {
@@ -246,13 +359,13 @@
                     part.mesh.position.lerp(target, 0.08); 
                 });
 
-                // Вращение только тогда, когда модель собрана
                 if (!isExploded && robotModel) {
                     robotModel.rotation.y += 0.003;
                 }
                 
                 controls.update();
                 renderer.render(scene, camera);
+                labelRenderer.render(scene, camera); // Рендерим текстовый слой поверх 3D
             }
             animate();
 
@@ -265,6 +378,7 @@
             camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
+            labelRenderer.setSize(container.clientWidth, container.clientHeight);
         });
     </script>
 
