@@ -110,7 +110,7 @@
             z-index: 10;
         }
 
-        /* ЖЕСТКИЙ СЛОЙ ДЛЯ ВЫНОСОК */
+        /* СЛОЙ ДЛЯ ВЫНОСОК */
         .labels-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -249,17 +249,14 @@
 
         loader.load('./tank_nrtk.glb', (gltf) => {
             robotModel = gltf.scene;
-            
-            // Чтобы getWorldPosition работала идеально корректно, сначала добавляем модель в сцену
             scene.add(robotModel);
 
-            // ИСПРАВЛЕНИЕ БАГА ЦЕНТРИРОВАНИЯ: Сдвигаем саму модель ПОСЛЕ добавления в сцену,
-            // чтобы Three.js обновил матрицы трансформации и правильно считал мировые координаты
+            // Центрирование модели
             const box = new THREE.Box3().setFromObject(robotModel);
             const center = box.getCenter(new THREE.Vector3());
             robotModel.position.sub(center);
             
-            // Форсируем обновление матриц, чтобы getWorldPosition выдавал точные данные
+            // Форсируем обновление матриц
             robotModel.updateMatrixWorld(true);
 
             robotModel.traverse((child) => {
@@ -349,62 +346,71 @@
                 });
             });
 
-            function updateLabelsPositions() {
-                if (!isExploded) return;
-
-                const tempV = new THREE.Vector3();
-                const widthHalf = container.clientWidth / 2;
-                const heightHalf = container.clientHeight / 2;
-
-                parts.forEach(part => {
-                    if (part.labelDOM) {
-                        part.mesh.getWorldPosition(tempV);
-                        tempV.project(camera);
-
-                        if (tempV.z > 1) {
-                            part.labelDOM.style.display = 'none';
-                            return;
-                        } else {
-                            part.labelDOM.style.display = 'flex';
-                        }
-
-                        const x = (tempV.x * widthHalf) + widthHalf;
-                        const y = -(tempV.y * heightHalf) + heightHalf;
-
-                        part.labelDOM.style.left = `${x}px`;
-                        part.labelDOM.style.top = `${y}px`;
-                    }
-                });
-            }
-
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                parts.forEach(part => {
-                    const target = isExploded 
-                        ? part.originalPos.clone().add(part.explodeVec) 
-                        : part.originalPos;
-                    
-                    part.mesh.position.lerp(target, 0.08); 
-                });
-
-                if (!isExploded && robotModel) {
-                    robotModel.rotation.y += 0.003;
-                }
-                
-                controls.update();
-                
-                // ИСПРАВЛЕНИЕ: Сначала рендерим сцену, чтобы все меши заняли новые lerp-позиции,
-                // и только потом считаем проекции для HTML-табличек! Тогда не будет лагов.
-                renderer.render(scene, camera);
-                updateLabelsPositions();
-            }
-            animate();
-
         }, (xhr) => {
-            const p = Math.round(xhr.loaded / xhr.total * 100);
-            loaderStatus.innerText = `ЗАГРУЗКА ДАННЫХ: ${p}%`;
+            // ИСПРАВЛЕНИЕ: Безопасный расчет процентов на случай, если сервер не вернул xhr.total
+            if (xhr.total > 0) {
+                const p = Math.round(xhr.loaded / xhr.total * 100);
+                loaderStatus.innerText = `ЗАГРУЗКА ДАННЫХ: ${p}%`;
+            } else {
+                loaderStatus.innerText = `ЗАГРУЗКА ДАННЫХ: ${(xhr.loaded / 1024 / 1024).toFixed(1)} MB`;
+            }
         });
+
+        function updateLabelsPositions() {
+            if (!isExploded) return;
+
+            const tempV = new THREE.Vector3();
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            parts.forEach(part => {
+                if (part.labelDOM) {
+                    // ИСПРАВЛЕНИЕ: принудительно заставляем Three.js обновить матрицы меша, 
+                    // так как его позиция прямо сейчас меняется через lerp в animate()
+                    part.mesh.updateMatrixWorld(true);
+                    
+                    part.mesh.getWorldPosition(tempV);
+                    tempV.project(camera);
+
+                    if (tempV.z > 1) {
+                        part.labelDOM.style.display = 'none';
+                        return;
+                    } else {
+                        part.labelDOM.style.display = 'flex';
+                    }
+
+                    const x = (tempV.x * widthHalf) + widthHalf;
+                    const y = -(tempV.y * heightHalf) + heightHalf;
+
+                    part.labelDOM.style.left = `${x}px`;
+                    part.labelDOM.style.top = `${y}px`;
+                }
+            });
+        }
+
+        // ИСПРАВЛЕНИЕ: Функция animate вынесена из колбэка загрузки, 
+        // чтобы рендеринг запускался мгновенно и не вешал страницу
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            parts.forEach(part => {
+                const target = isExploded 
+                    ? part.originalPos.clone().add(part.explodeVec) 
+                    : part.originalPos;
+                
+                part.mesh.position.lerp(target, 0.08); 
+            });
+
+            if (!isExploded && robotModel) {
+                robotModel.rotation.y += 0.003;
+            }
+            
+            controls.update();
+            
+            renderer.render(scene, camera);
+            updateLabelsPositions();
+        }
+        animate();
 
         window.addEventListener('resize', () => {
             camera.aspect = container.clientWidth / container.clientHeight;
