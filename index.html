@@ -294,8 +294,8 @@
                         if (explodeVec.length() === 0 || (Math.abs(explodeVec.x) < 0.1 && Math.abs(explodeVec.z) < 0.1)) {
                             explodeVec.set((Math.random() - 0.5) * 2, 0.2, (Math.random() - 0.5) * 2).normalize();
                         }
-                        explodeVec.multiplyScalar(0.5);
-                        explodeVec.y += 0.15;
+                        explodeVec.multiplyScalar(0.8);
+                        explodeVec.y += 0.35;
                     }
 
                     let labelDOM = null;
