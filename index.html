@@ -18,6 +18,7 @@
             --bg-overlay: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%); 
         }
 
+        /* --- ФОН ИЗ ТВОЕЙ СТРАНИЦЫ --- */
         body {
             background-color: #0a0a0a;
             background-image: url('background.jpg'); 
@@ -43,6 +44,7 @@
             z-index: -1;
         }
 
+        /* --- КИБЕР-ШАПКА (КАК БЫЛО) --- */
         .cyber-header {
             width: 100%;
             display: flex;
@@ -66,6 +68,7 @@
         .nav-link { color: #fff; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
+        /* --- КОНТЕЙНЕР 3D СЦЕНЫ --- */
         #canvas-container {
             width: 100%;
             height: 600px; 
@@ -83,6 +86,7 @@
             z-index: 10;
         }
 
+        /* --- СЛОЙ ДЛЯ СВЕТЯЩИХСЯ ТОЧЕК И ВЫНОСОК --- */
         .labels-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -90,15 +94,17 @@
             z-index: 1000;
         }
 
+        /* Сама интерактивная метка */
         .part-label {
             position: absolute;
             display: flex;
             align-items: center;
-            transform: translate(-8px, -8px); 
-            pointer-events: auto; 
-            z-index: 1010;
+            transform: translate(-10px, -10px); /* Центрирование точки */
+            transition: opacity 0.2s ease;
+            pointer-events: auto; /* Позволяем наводить мышь на точку и карту */
         }
 
+        /* Светящаяся неоновая точка на детали */
         .label-dot {
             width: 16px;
             height: 16px;
@@ -108,22 +114,23 @@
             box-shadow: 0 0 15px var(--neon-blue);
             cursor: pointer;
             flex-shrink: 0;
-            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease, background-color 0.2s ease;
         }
 
         .part-label:hover .label-dot {
             transform: scale(1.3);
             background-color: #ff0055;
-            box-shadow: 0 0 20px #ff0055;
+            box-shadow: 0 0 15px #ff0055;
         }
 
+        /* Всплывающая технологическая карточка с описанием */
         .label-card {
             background: rgba(0, 10, 20, 0.95);
             border: 1px solid var(--neon-blue);
             padding: 12px 16px;
             border-radius: 6px;
             margin-left: 15px;
-            width: 260px;
+            width: 250px;
             backdrop-filter: blur(8px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.8), 0 0 15px rgba(0, 242, 255, 0.2);
             opacity: 0;
@@ -142,7 +149,7 @@
             font-family: monospace;
             font-size: 13px;
             color: var(--neon-blue);
-            margin: 0 0 6px 0;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -155,6 +162,7 @@
             margin: 0;
         }
 
+        /* --- КИБЕРПАНК ПОЛЗУНОК РАЗБОРКИ --- */
         .controls-panel {
             position: absolute;
             bottom: 30px;
@@ -208,7 +216,7 @@
         <div id="loader-status">СКАНИРОВАНИЕ СИСТЕМ...</div>
         
         <div id="controls-panel" class="controls-panel" style="display: none;">
-            <label for="explodeSlider">ДЕТАЛИЗАЦИЯ</label>
+            <label for="explodeSlider">КОНФИГУРАЦИЯ СБОРКИ</label>
             <input type="range" id="explodeSlider" min="0" max="1" step="0.005" value="0">
         </div>
         
@@ -236,6 +244,7 @@
         const labelsContainer = document.getElementById('labels-container');
         
         const scene = new THREE.Scene();
+        // alpha: true оставляет сцену прозрачной, чтобы задний фон background.jpg корректно отображался
         scene.background = null; 
 
         const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
@@ -247,6 +256,7 @@
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
 
+        // Футуристичное сбалансированное освещение
         scene.add(new THREE.AmbientLight(0xffffff, 1.0));
         const sun = new THREE.DirectionalLight(0x00f2ff, 1.5);
         sun.position.set(5, 12, 8);
@@ -259,12 +269,13 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2 + 0.1;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Не даем камере уходить сильно под пол
 
         const activeLabels = []; 
         let robotModel = null;
         const loader = new GLTFLoader();
 
+        // Карта соответствия имен из файла понятным русским названиям
         const nameMapping = {
             'Body': 'Основное шасси / Рама',
             'skelet': 'Активная защита',
@@ -288,37 +299,43 @@
             robotModel = gltf.scene;
             scene.add(robotModel);
 
-            // Центрируем модель внутри её локального пространства сцены
+            // Идеальное автоматическое центрирование робота по центру экрана
             const box = new THREE.Box3().setFromObject(robotModel);
             const center = box.getCenter(new THREE.Vector3());
             robotModel.position.sub(center);
             
             robotModel.updateMatrixWorld(true);
 
+            // Сканируем 3D объекты и создаем для них интерактивные элементы
             robotModel.traverse((child) => {
                 if (child.isMesh) {
-                    // Стабильно запоминаем исходную локальную позицию меша
+                    // Запоминаем стартовые позиции для плавного перемещения ползунком
                     child.userData.originalPosition = child.position.clone();
                     
-                    // Вычисляем вектор разлета на основе стабильных локальных координат меша
-                    let explodeVec = child.position.clone().normalize();
+                    const worldPos = new THREE.Vector3();
+                    child.getWorldPosition(worldPos);
+                    
+                    // Рассчитываем индивидуальный вектор разлета во все стороны
+                    let explodeVec = worldPos.clone().normalize();
                     const combinedName = `${child.name ? child.name.toLowerCase() : ''} ${(child.parent && child.parent.name) ? child.parent.name.toLowerCase() : ''}`;
 
-                    // Персонализированное распределение направлений разлёта деталей
+                    // Тонкая настройка направления разлета для конкретных узлов
                     if (combinedName.includes('body') || combinedName.includes('skelet') || combinedName.includes('rama') || combinedName.includes('chassis')) {
-                        explodeVec.set(0, 0, 0); 
+                        explodeVec.set(0, 0, 0); // Корпус остается на месте
                     } else if (combinedName.includes('bonnet')) {
-                        explodeVec.set(0, 1.0, 0.5).normalize(); 
+                        explodeVec.set(0, 0.8, 0.8); // Капот летит вверх и вперед
                     } else if (combinedName.includes('transport_module')) {
-                        explodeVec.set(0, 1.0, -0.5).normalize(); 
+                        explodeVec.set(0, 0.8, -0.8); // Отсек летит вверх и назад
                     } else {
                         if (explodeVec.length() === 0) {
                             explodeVec.set((Math.random() - 0.5) * 2, 0.2, (Math.random() - 0.5) * 2).normalize();
                         }
-                        explodeVec.multiplyScalar(0.8);
+                        explodeVec.multiplyScalar(0.7);
+                        explodeVec.y += 0.2; // Немного приподнимаем остальные детали в воздух
                     }
                     child.userData.explodeVector = explodeVec;
 
+                    // Проверяем, нужно ли вешать на деталь светящуюся точку
                     let customTitle = '';
                     for (const [key, value] of Object.entries(nameMapping)) {
                         if (combinedName.includes(key.toLowerCase())) {
@@ -327,6 +344,7 @@
                         }
                     }
 
+                    // Если имя совпало, генерируем HTML структуру точки на ходу
                     if (customTitle) {
                         const labelEl = document.createElement('div');
                         labelEl.className = 'part-label';
@@ -357,19 +375,27 @@
             loaderStatus.innerText = `СКАНИРОВАНИЕ СИСТЕМ: ${p}%`;
         });
 
+        // Функция проекции 3D координат центра деталей на 2D экран поверх холста
         function updateLabelsPositions() {
-            if (!robotModel) return;
-
             const tempV = new THREE.Vector3();
             const widthHalf = container.clientWidth / 2;
             const heightHalf = container.clientHeight / 2;
+            const sliderVal = parseFloat(explodeSlider.value);
 
             activeLabels.forEach(part => {
-                // Извлекаем актуальную мировую позицию детали динамически в цикле
+                // Отображаем точки, только если пользователь начал двигать ползунок разборки
+                if (sliderVal < 0.15) {
+                    part.labelDOM.style.opacity = '0';
+                    part.labelDOM.style.pointerEvents = 'none';
+                    return;
+                } else {
+                    part.labelDOM.style.opacity = '1';
+                    part.labelDOM.style.pointerEvents = 'auto';
+                }
+
                 part.mesh.getWorldPosition(tempV);
                 tempV.project(camera);
 
-                // Прячем маркер, если деталь оказалась за камерой
                 if (tempV.z > 1) {
                     part.labelDOM.style.display = 'none';
                     return;
@@ -385,30 +411,35 @@
             });
         }
 
+        // Цикл анимации
         function animate() {
             requestAnimationFrame(animate);
             
             const sliderValue = parseFloat(explodeSlider.value);
 
+            // Двигаем каждый меш к его целевой точке разлета в зависимости от положения ползунка
             if (robotModel) {
                 robotModel.traverse((child) => {
                     if (child.isMesh && child.userData.originalPosition && child.userData.explodeVector) {
                         const targetPos = child.userData.originalPosition.clone().add(
-                            child.userData.explodeVector.clone().multiplyScalar(sliderValue * 1.5)
+                            child.userData.explodeVector.clone().multiplyScalar(sliderValue)
                         );
-                        // Используем lerp для безупречно мягкого эффекта выдвижения деталей
+                        // lerp обеспечивает плавную доводку деталей до места
                         child.position.lerp(targetPos, 0.1);
                     }
                 });
 
-                // Легкое вращение срабатывает только тогда, когда модель полностью собрана
+                // Когда робот собран полностью, он медленно и красиво вращается сам
                 if (sliderValue === 0) {
                     robotModel.rotation.y += 0.003;
                 }
             }
 
             controls.update();
+            
+            // Сначала выполняем рендеринг геометрии
             renderer.render(scene, camera);
+            // И только после этого пересчитываем позиции точек, исключая любые подергивания!
             updateLabelsPositions();
         }
 
