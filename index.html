@@ -255,17 +255,51 @@
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
+        
+        // --- АКТИВАЦИЯ ТЕНЕЙ В РЕНДЕРЕРЕ ---
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Мягкие тени
+        
         container.appendChild(renderer.domElement);
 
         // Атмосферный свет для киберпанк-стилистики
-        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-        const sun = new THREE.DirectionalLight(0x00f2ff, 1.5);
-        sun.position.set(5, 12, 8);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6)); // Чуть уменьшили общую яркость, чтобы тени выделились
+
+        // Главный источник света, отбрасывающий тени (Неоновый синий)
+        const sun = new THREE.DirectionalLight(0x00f2ff, 1.8);
+        sun.position.set(4, 8, 5);
+        sun.castShadow = true; // Разрешаем генерировать тени
+        
+        // Настройка карты теней для хорошего качества и производительности
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+        sun.shadow.camera.near = 0.5;
+        sun.shadow.camera.far = 20;
+        
+        // Границы камеры теней, описывающие область вокруг робота
+        const d = 4;
+        sun.shadow.camera.left = -d;
+        sun.shadow.camera.right = d;
+        sun.shadow.camera.top = d;
+        sun.shadow.camera.bottom = -d;
+        sun.shadow.bias = -0.0005; // Фикс артефактов наложения
         scene.add(sun);
 
-        const fillLight = new THREE.DirectionalLight(0xff0055, 0.5);
-        fillLight.position.set(-5, 5, -5);
+        // Боковая подсветка для контраста (Розово-красный неон)
+        const fillLight = new THREE.DirectionalLight(0xff0055, 0.7);
+        fillLight.position.set(-5, 4, -3);
+        // Этот свет тени не отбрасывает, чтобы не перегружать сцену
         scene.add(fillLight);
+
+        // --- СОЗДАНИЕ НЕВИДИМОГО ПОЛА ДЛЯ УЛАВЛИВАНИЯ ТЕНЕЙ ---
+        const floorGeo = new THREE.PlaneGeometry(50, 50);
+        // ShadowMaterial рендерит ТОЛЬКО падающие тени, оставляя плоскость прозрачной
+        const floorMat = new THREE.ShadowMaterial({ opacity: 0.5 }); 
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.85; // Настраивается под нижнюю точку гусениц модели
+        floor.receiveShadow = true; // Плоскость принимает тени
+        scene.add(floor);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -307,9 +341,21 @@
             
             robotModel.updateMatrixWorld(true);
 
-            // Парсинг деталей и развешивание маркеров
+            // Подгоняем высоту пола точно под нижнюю точку модели
+            floor.position.y = box.min.y - center.y;
+
+            // Парсинг деталей, настройка теней и развешивание маркеров
             robotModel.traverse((child) => {
                 if (child.isMesh) {
+                    // --- ВКЛЮЧАЕМ ТЕНИ ДЛЯ КАЖДОЙ ДЕТАЛИ ---
+                    child.castShadow = true;    // Деталь отбрасывает тень
+                    child.receiveShadow = true; // Принимает тени от других деталей
+
+                    // Корректируем материалы, чтобы они круто реагировали на свет
+                    if (child.material) {
+                        child.material.roughness = 0.3; // Небольшой кибер-глянец
+                    }
+
                     // Сохраняем исходное положение для плавного lerp
                     child.userData.originalPosition = child.position.clone();
                     
@@ -383,7 +429,6 @@
             const heightHalf = container.clientHeight / 2;
 
             activeLabels.forEach(part => {
-                // Точки видны ВСЕГДА (убрали ограничение по слайдеру)
                 part.labelDOM.style.opacity = '1';
                 part.labelDOM.style.pointerEvents = 'auto';
 
@@ -433,7 +478,7 @@
 
             controls.update();
             
-            // 1. Сначала жестко рендерим 3D геометрию
+            // 1. Сначала жестко рендерим 3D геометрию с тенями
             renderer.render(scene, camera);
             // 2. И только поверх готового кадра проецируем точки, убирая любые лаги и тряску!
             updateLabelsPositions();
