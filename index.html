@@ -263,10 +263,10 @@
         container.appendChild(renderer.domElement);
 
         // Атмосферный свет для киберпанк-стилистики
-        scene.add(new THREE.AmbientLight(0xffffff, 0.9)); // Чуть уменьшили общую яркость, чтобы тени выделились
+        scene.add(new THREE.AmbientLight(0xffffff, 1.9)); // Чуть уменьшили общую яркость, чтобы тени выделились
 
         // Главный источник света, отбрасывающий тени (Неоновый синий)
-        const sun = new THREE.DirectionalLight(0x00f2ff, 3.8);
+        const sun = new THREE.DirectionalLight(0x00f2ff, 6.8);
         sun.position.set(4, 8, 5);
         sun.castShadow = true; // Разрешаем генерировать тени
         
@@ -286,7 +286,7 @@
         scene.add(sun);
 
         // Боковая подсветка для контраста (Розово-красный неон)
-        const fillLight = new THREE.DirectionalLight(0xff0055, 0.9);
+        const fillLight = new THREE.DirectionalLight(0xff0055, 1.9);
         fillLight.position.set(-5, 4, -3);
         // Этот свет тени не отбрасывает, чтобы не перегружать сцену
         scene.add(fillLight);
