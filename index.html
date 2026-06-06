@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Робот с сочным освещением и тенями</title>
+    <title>3D Робот — Исправление ошибок</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #1a1a1a; /* Темный фон, чтобы тени и свет смотрелись эффектно */
+            background-color: #1a1a1a;
             font-family: sans-serif;
         }
         #canvas-container {
             width: 100vw;
             height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
-        /* Ползунок управления разборкой */
         #slider-container {
             position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 12px 25px;
             border-radius: 30px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             display: flex;
@@ -32,14 +35,17 @@
             z-index: 10;
         }
         #explode-slider {
-            width: 250px;
+            width: 200px;
             cursor: pointer;
         }
-        #slider-label {
+        .slider-label {
             color: #fff;
             font-size: 14px;
             user-select: none;
-            min-width: 45px;
+        }
+        #slider-value {
+            min-width: 40px;
+            text-align: right;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -49,166 +55,157 @@
 <body>
 
     <div id="slider-container">
-        <span id="slider-label">Сборка:</span>
+        <span class="slider-label">Сборка:</span>
         <input type="range" id="explode-slider" min="0" max="100" value="0">
-        <span id="slider-label" id="slider-value">0%</span>
+        <span class="slider-label" id="slider-value">0%</span>
     </div>
 
     <div id="canvas-container"></div>
 
     <script>
-        // Основные переменные сцены
         let scene, camera, renderer, controls;
         let robotModel = null;
-        
-        // Массив для хранения начальных позиций деталей для разборки
         const originalPositions = new Map();
         
-        // Целевое значение разборки (куда плавно стремится анимация)
         let targetExplodeFactor = 0;
         let currentExplodeFactor = 0;
 
-        init();
-        animate();
+        // Запуск инициализации с отловом возможных ошибок
+        try {
+            init();
+            animate();
+        } catch (e) {
+            console.error("Критическая ошибка при запуске сцены:", e);
+            alert("Что-то пошло не так при создании 3D сцены. Проверь консоль браузера (F12)!");
+        }
 
         function init() {
             const container = document.getElementById('canvas-container');
 
-            // 1. Создание сцены
+            // 1. Создание сцены и тумана
             scene = new THREE.Scene();
-            // Можно добавить легкий туман для глубины пространства
             scene.fog = new THREE.FogExp2(0x1a1a1a, 0.05);
 
             // 2. Настройка камеры
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
             camera.position.set(0, 3, 6);
 
-            // 3. Настройка рендерера с поддержкой ТЕНЕЙ и настроек цвета
+            // 3. Создание рендерера
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             
-            // ВКЛЮЧАЕМ ТЕНИ
+            // Безопасное включение теней
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Мягкие размытые тени
-            
-            // ЦВЕТОКОРРЕКЦИЯ (чтобы модель не была бледной)
-            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             
             container.appendChild(renderer.domElement);
 
-            // 4. Интерактивное управление камерой
+            // 4. Управление камерой (OrbitControls)
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 + 0.1; // Не даем камере падать под пол
+            controls.maxPolarAngle = Math.PI / 2 + 0.1; 
 
-            // 5. НАСТРОЙКА ОСВЕЩЕНИЯ (Новая сочная схема)
-            // Общий мягкий свет окружающей среды
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            // 5. Освещение (Универсальная яркая схема)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Базовый свет
             scene.add(ambientLight);
 
-            // Главный направленный свет (создает яркие блики и тени)
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
-            dirLight.position.set(6, 12, 8);
-            dirLight.castShadow = true; // Этот свет генерирует тени
-
-            // Настройка разрешения карты теней (выше значение = четче тени)
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); // Направленный свет для теней
+            dirLight.position.set(5, 10, 7);
+            dirLight.castShadow = true;
+            
+            // Настройка качества теней
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
             dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 30;
-
-            // Границы генерации теней вокруг робота
-            const d = 8;
+            dirLight.shadow.camera.far = 25;
+            const d = 6;
             dirLight.shadow.camera.left = -d;
             dirLight.shadow.camera.right = d;
             dirLight.shadow.camera.top = d;
             dirLight.shadow.camera.bottom = -d;
-            dirLight.shadow.bias = -0.0003; // Убирает артефакты полос
+            dirLight.shadow.bias = -0.0005;
             scene.add(dirLight);
 
-            // Мягкий свет снизу, чтобы грани в тени оставались читаемыми
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x333333, 0.5);
+            // Подсветка снизу
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
             hemiLight.position.set(0, 20, 0);
             scene.add(hemiLight);
 
-            // 6. НЕВИДИМЫЙ ПОЛ ДЛЯ УЛАВЛИВАНИЯ ТЕНЕЙ
+            // 6. Пол для отображения теней
             const floorGeo = new THREE.PlaneGeometry(50, 50);
-            const floorMat = new THREE.ShadowMaterial({ opacity: 0.4 }); // Ловит только тень, сам прозрачный
+            const floorMat = new THREE.ShadowMaterial({ opacity: 0.3 }); // Полупрозрачные тени
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
-            floor.position.y = -1.2; // Отрегулируй, чтобы пол был ровно под ногами робота
-            floor.receiveShadow = true; // Принимает тени
+            floor.position.y = -1.2; 
+            floor.receiveShadow = true; 
             scene.add(floor);
 
-            // 7. Загрузка 3D-модели робота
+            // 7. Загрузка модели робота
             const loader = new THREE.GLTFLoader();
-            // Укажи здесь правильное имя своего файла модели (например, 'robot.gltf' или 'scene.gltf')
+            
+            // ВНИМАНИЕ: Проверь, чтобы имя файла совпадало с твоим (robot.gltf или scene.gltf или robot.glb)
             loader.load('robot.gltf', function (gltf) {
                 robotModel = gltf.scene;
                 
-                // Центрируем модель
+                // Центрируем модель автоматически
                 const box = new THREE.Box3().setFromObject(robotModel);
                 const center = box.getCenter(new THREE.Vector3());
                 robotModel.position.x += (robotModel.position.x - center.x);
                 robotModel.position.z += (robotModel.position.z - center.z);
 
-                // Настраиваем тени и материалы для каждой детали робота
+                // Настраиваем тени и свойства материалов для каждой детали
                 robotModel.traverse(function (child) {
                     if (child.isMesh) {
-                        child.castShadow = true;     // Отбрасывает тень
-                        child.receiveShadow = true;  // Принимает тени от других деталей
+                        child.castShadow = true;
+                        child.receiveShadow = true;
 
-                        // Улучшаем свойства материалов, чтобы убрать бледность
                         if (child.material) {
-                            child.material.roughness = 0.35; // Слегка глянцевая поверхность
-                            child.material.metalness = 0.3;  // Небольшой металлический отблеск
+                            child.material.roughness = 0.4;
+                            child.material.metalness = 0.2;
                         }
 
-                        // Сохраняем начальные позиции для логики взрыва (разборки)
+                        // Сохраняем позиции для разборки
                         originalPositions.set(child, {
                             position: child.position.clone(),
-                            // Направление разлёта — от центра детали относительно центра робота
                             direction: child.position.clone().normalize()
                         });
                     }
                 });
 
                 scene.add(robotModel);
-                console.log("Робот успешно загружен и освещен!");
-            }, undefined, function (error) {
-                console.error('Ошибка при загрузке модели робота:', error);
+                console.log("Робот успешно добавлен на сцену!");
+                
+            }, function (xhr) {
+                // Прогресс загрузки в консоли
+                console.log((xhr.loaded / xhr.total * 100) + '% загружено');
+            }, function (error) {
+                console.error('Ошибка при загрузке GLTF-файла:', error);
             });
 
-            // 8. Слушатель изменения ползунка разборки
+            // 8. Логика ползунка
             const slider = document.getElementById('explode-slider');
             const sliderValueText = document.getElementById('slider-value');
             
             slider.addEventListener('input', function (e) {
                 const val = parseInt(e.target.value);
-                if(sliderValueText) sliderValueText.innerText = val + '%';
-                // Переводим 0-100% в коэффициент от 0.0 до 1.5 (расстояние разлёта деталей)
+                if (sliderValueText) sliderValueText.innerText = val + '%';
                 targetExplodeFactor = (val / 100) * 1.5; 
             });
 
-            // Корректное изменение размера окна
             window.addEventListener('resize', onWindowResize, false);
         }
 
-        // Плавное обновление позиций деталей при разборке (Интерполяция Lerp)
         function updateExplosion() {
             if (!robotModel || originalPositions.size === 0) return;
 
-            // Плавно подгоняем текущий фактор к целевому
             currentExplodeFactor += (targetExplodeFactor - currentExplodeFactor) * 0.08;
 
-            // Если разница микроскопическая, фиксируем её
             if (Math.abs(targetExplodeFactor - currentExplodeFactor) < 0.001) {
                 currentExplodeFactor = targetExplodeFactor;
             }
 
-            // Двигаем каждую деталь вдоль её вектора направления
             originalPositions.forEach((data, child) => {
                 const origPos = data.position;
                 const dir = data.direction;
@@ -225,18 +222,11 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Основной цикл анимации сцены
         function animate() {
             requestAnimationFrame(animate);
-
-            // Обновляем физику плавного разлёта деталей
             updateExplosion();
-
-            // Обновляем вращение камеры пользователем
-            controls.update();
-
-            // Рендерим кадр
-            renderer.render(scene, camera);
+            if (controls) controls.update();
+            if (renderer && scene && camera) renderer.render(scene, camera);
         }
     </script>
 </body>
